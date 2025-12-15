@@ -14,11 +14,20 @@ class StudentPlacementController extends Controller
     {
         $search = $request->input('search', '');
         $perPage = $request->input('per_page', 25);
-
-        $query = StudentPlacement::query();
+        $academicYear = $request->input('academic_year');
 
         if ($search) {
             $query = StudentPlacement::search($search);
+
+            if ($academicYear) {
+                $query->where('academic_year', (int) $academicYear);
+            }
+        } else {
+            $query = StudentPlacement::query();
+
+            if ($academicYear) {
+                $query->where('academic_year', $academicYear);
+            }
         }
 
         $placements = $query->paginate($perPage)->withQueryString();
@@ -30,17 +39,26 @@ class StudentPlacementController extends Controller
             ')
             ->first();
 
+        $academicYears = StudentPlacement::query()
+            ->distinct()
+            ->orderByDesc('academic_year')
+            ->pluck('academic_year')
+            ->filter()
+            ->values();
+
         return Inertia::render('placements/index', [
             'placements' => $placements,
             'filters' => [
                 'search' => $search,
                 'per_page' => (int) $perPage,
+                'academic_year' => $academicYear,
             ],
             'stats' => [
                 'total_students' => StudentPlacement::count(),
                 'feeder_schools' => $filters->feeder_schools_count,
                 'placement_schools' => $filters->placement_schools_count,
             ],
+            'academic_years' => $academicYears,
         ]);
     }
 
@@ -53,9 +71,8 @@ class StudentPlacementController extends Controller
         }
 
         $results = StudentPlacement::search($search)
-            ->take(50)
-            ->get()
-            ->map(fn (StudentPlacement $placement) => [
+            ->paginate(9)
+            ->through(fn (StudentPlacement $placement) => [
                 'id' => $placement->id,
                 'national_student_id' => $placement->national_student_id,
                 'student_name' => $placement->student_name,
@@ -64,6 +81,6 @@ class StudentPlacementController extends Controller
                 'year_7_placement_school_name' => $placement->year_7_placement_school_name,
             ]);
 
-        return response()->json(['data' => $results]);
+        return response()->json($results);
     }
 }
