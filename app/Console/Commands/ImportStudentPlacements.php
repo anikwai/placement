@@ -12,7 +12,7 @@ class ImportStudentPlacements extends Command
      *
      * @var string
      */
-    protected $signature = 'placements:import {file? : Path to the CSV file}';
+    protected $signature = 'placements:import {file? : Path to the CSV file} {--year= : The academic year for the placements}';
 
     /**
      * The console command description.
@@ -27,6 +27,13 @@ class ImportStudentPlacements extends Command
     public function handle(StudentPlacementImporter $importer): int
     {
         $filePath = $this->argument('file') ?? public_path('data.csv');
+        $year = $this->option('year');
+
+        if (! $year) {
+            $this->error('The --year option is required.');
+
+            return self::FAILURE;
+        }
 
         if (! file_exists($filePath)) {
             $this->error("File not found: {$filePath}");
@@ -34,7 +41,7 @@ class ImportStudentPlacements extends Command
             return self::FAILURE;
         }
 
-        $this->info("Importing student placements from: {$filePath}");
+        $this->info("Importing student placements for academic year {$year} from: {$filePath}");
 
         $totalRows = $importer->countRows($filePath);
         $progressBar = $this->output->createProgressBar($totalRows);
@@ -43,7 +50,7 @@ class ImportStudentPlacements extends Command
         try {
             $result = $importer
                 ->onProgress(fn (int $processed) => $progressBar->setProgress($processed))
-                ->import($filePath);
+                ->import($filePath, (int) $year);
 
             $progressBar->finish();
             $this->newLine(2);
