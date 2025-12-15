@@ -20,6 +20,7 @@ class StudentPlacement extends Model
         'student_name',
         'gender',
         'year_7_placement_school_name',
+        'academic_year',
     ];
 
     /**
@@ -36,6 +37,7 @@ class StudentPlacement extends Model
             'feeder_school_name' => $this->feeder_school_name,
             'gender' => $this->gender,
             'year_7_placement_school_name' => $this->year_7_placement_school_name,
+            'academic_year' => $this->academic_year,
             'created_at' => $this->created_at->timestamp,
         ];
     }
