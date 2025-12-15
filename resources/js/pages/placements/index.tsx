@@ -1,14 +1,15 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { index } from '@/actions/App/Http/Controllers/StudentPlacementController';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
 import { GraduationCap, School, Search, Users, X } from 'lucide-react';
-import { useCallback, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import debounce from 'lodash/debounce';
 
 interface StudentPlacement {
@@ -58,16 +59,21 @@ const breadcrumbs: BreadcrumbItem[] = [
 export default function PlacementsIndex({ placements, filters, stats }: Props) {
     const [search, setSearch] = useState(filters.search);
 
-    const debouncedSearch = useCallback(
-        debounce((value: string) => {
+    const debouncedSearch = useMemo(() => {
+        return debounce((value: string) => {
             router.get(
                 index().url,
-                { search: value, per_page: filters.per_page },
+                { search: value || undefined, per_page: filters.per_page },
                 { preserveState: true, preserveScroll: true }
             );
-        }, 300),
-        [filters.per_page]
-    );
+        }, 300);
+    }, [filters.per_page]);
+
+    useEffect(() => {
+        return () => {
+            debouncedSearch.cancel();
+        };
+    }, [debouncedSearch]);
 
     const handleSearchChange = (value: string) => {
         setSearch(value);
@@ -76,13 +82,15 @@ export default function PlacementsIndex({ placements, filters, stats }: Props) {
 
     const clearSearch = () => {
         setSearch('');
+        debouncedSearch.cancel();
         router.get(index().url, { per_page: filters.per_page }, { preserveState: true });
     };
 
     const handlePerPageChange = (value: string) => {
+        debouncedSearch.cancel();
         router.get(
             index().url,
-            { search: filters.search, per_page: parseInt(value) },
+            { search: search || undefined, per_page: parseInt(value) },
             { preserveState: true }
         );
     };
@@ -97,171 +105,196 @@ export default function PlacementsIndex({ placements, filters, stats }: Props) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Student Placements" />
 
-            <div className="flex flex-col gap-6 p-4">
+            <div className="relative flex flex-col gap-6 p-4 md:p-6">
+                <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+                    <div className="absolute -top-24 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-primary/10 blur-3xl" />
+                    <div className="absolute -bottom-24 right-0 h-80 w-80 rounded-full bg-emerald-500/10 blur-3xl" />
+                </div>
+
+                {/* Header */}
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <h1 className="text-2xl font-semibold tracking-tight">Student Placements</h1>
+                        <p className="text-sm text-muted-foreground">
+                            Search Year 7 student placements across all schools
+                        </p>
+                    </div>
+                    {search && (
+                        <Button variant="outline" size="sm" className="w-fit" onClick={clearSearch}>
+                            <X className="h-4 w-4" />
+                            Clear search
+                        </Button>
+                    )}
+                </div>
+
                 {/* Stats Cards */}
-                <div className="grid gap-4 md:grid-cols-3">
-                    <Card>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    <Card className="bg-card/70 backdrop-blur supports-[backdrop-filter]:bg-card/70">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Total Students</CardTitle>
-                            <Users className="text-muted-foreground h-4 w-4" />
+                            <CardTitle className="text-sm font-medium text-muted-foreground">Total Students</CardTitle>
+                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+                                <Users className="h-4 w-4 text-primary" />
+                            </div>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{stats.total_students.toLocaleString()}</div>
-                            <p className="text-muted-foreground text-xs">Year 7 placements</p>
+                            <div className="text-3xl font-bold">{stats.total_students.toLocaleString()}</div>
+                            <p className="mt-1 text-xs text-muted-foreground">Placed in Year 7</p>
                         </CardContent>
                     </Card>
-                    <Card>
+                    <Card className="bg-card/70 backdrop-blur supports-[backdrop-filter]:bg-card/70">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Feeder Schools</CardTitle>
-                            <School className="text-muted-foreground h-4 w-4" />
+                            <CardTitle className="text-sm font-medium text-muted-foreground">Feeder Schools</CardTitle>
+                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10">
+                                <School className="h-4 w-4 text-emerald-500" />
+                            </div>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{stats.feeder_schools.toLocaleString()}</div>
-                            <p className="text-muted-foreground text-xs">Primary schools</p>
+                            <div className="text-3xl font-bold">{stats.feeder_schools.toLocaleString()}</div>
+                            <p className="mt-1 text-xs text-muted-foreground">Primary schools</p>
                         </CardContent>
                     </Card>
-                    <Card>
+                    <Card className="bg-card/70 backdrop-blur supports-[backdrop-filter]:bg-card/70">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Placement Schools</CardTitle>
-                            <GraduationCap className="text-muted-foreground h-4 w-4" />
+                            <CardTitle className="text-sm font-medium text-muted-foreground">Placement Schools</CardTitle>
+                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-500/10">
+                                <GraduationCap className="h-4 w-4 text-sky-500" />
+                            </div>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{stats.placement_schools.toLocaleString()}</div>
-                            <p className="text-muted-foreground text-xs">Secondary schools</p>
+                            <div className="text-3xl font-bold">{stats.placement_schools.toLocaleString()}</div>
+                            <p className="mt-1 text-xs text-muted-foreground">Secondary schools</p>
                         </CardContent>
                     </Card>
                 </div>
 
-                {/* Search and Filters */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Student Placements</CardTitle>
-                        <CardDescription>
-                            Search and view Year 7 student placements across all schools
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                            <div className="relative flex-1 max-w-sm">
-                                <Search className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
-                                <Input
-                                    type="text"
-                                    placeholder="Search by name, ID, or school..."
-                                    value={search}
-                                    onChange={(e) => handleSearchChange(e.target.value)}
-                                    className="pl-9 pr-9"
-                                />
-                                {search && (
-                                    <button
-                                        onClick={clearSearch}
-                                        className="text-muted-foreground hover:text-foreground absolute right-3 top-1/2 -translate-y-1/2"
-                                    >
-                                        <X className="h-4 w-4" />
-                                    </button>
-                                )}
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <span className="text-muted-foreground text-sm">Show</span>
-                                <Select
-                                    value={String(filters.per_page)}
-                                    onValueChange={handlePerPageChange}
-                                >
-                                    <SelectTrigger className="w-20">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="10">10</SelectItem>
-                                        <SelectItem value="25">25</SelectItem>
-                                        <SelectItem value="50">50</SelectItem>
-                                        <SelectItem value="100">100</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <span className="text-muted-foreground text-sm">entries</span>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-
                 {/* Results Table */}
-                <Card>
-                    <CardContent className="p-0">
-                        <div className="overflow-x-auto">
-                            <table className="w-full">
-                                <thead>
-                                    <tr className="border-b bg-muted/50">
-                                        <th className="px-4 py-3 text-left text-sm font-medium">Student ID</th>
-                                        <th className="px-4 py-3 text-left text-sm font-medium">Student Name</th>
-                                        <th className="px-4 py-3 text-left text-sm font-medium">Gender</th>
-                                        <th className="px-4 py-3 text-left text-sm font-medium">Feeder School</th>
-                                        <th className="px-4 py-3 text-left text-sm font-medium">Placement School</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {placements.data.length === 0 ? (
-                                        <tr>
-                                            <td colSpan={5} className="px-4 py-8 text-center">
-                                                <div className="text-muted-foreground">
-                                                    {filters.search
-                                                        ? 'No students found matching your search.'
-                                                        : 'No students found.'}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ) : (
-                                        placements.data.map((placement) => (
-                                            <tr
-                                                key={placement.id}
-                                                className="border-b transition-colors hover:bg-muted/50"
-                                            >
-                                                <td className="px-4 py-3">
-                                                    <code className="bg-muted rounded px-1.5 py-0.5 text-sm">
-                                                        {placement.national_student_id}
-                                                    </code>
-                                                </td>
-                                                <td className="px-4 py-3 font-medium">
-                                                    {placement.student_name}
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    <Badge variant={placement.gender === 'M' ? 'default' : 'secondary'}>
-                                                        {placement.gender === 'M' ? 'Male' : 'Female'}
-                                                    </Badge>
-                                                </td>
-                                                <td className="text-muted-foreground px-4 py-3 text-sm">
-                                                    {placement.feeder_school_name}
-                                                </td>
-                                                <td className="px-4 py-3 text-sm">
-                                                    {placement.year_7_placement_school_name}
-                                                </td>
-                                            </tr>
-                                        ))
-                                    )}
-                                </tbody>
-                            </table>
+                <Card className="overflow-hidden bg-card/70 backdrop-blur supports-[backdrop-filter]:bg-card/70">
+                    <CardHeader>
+                        <div>
+                            <CardTitle>Placements</CardTitle>
+                            <CardDescription>
+                                {placements.total.toLocaleString()} students across {stats.feeder_schools.toLocaleString()} feeder schools
+                            </CardDescription>
                         </div>
-
-                        {/* Pagination */}
-                        {placements.last_page > 1 && (
-                            <div className="flex flex-col items-center justify-between gap-4 border-t px-4 py-4 sm:flex-row">
-                                <div className="text-muted-foreground text-sm">
-                                    Showing {placements.from} to {placements.to} of{' '}
-                                    {placements.total.toLocaleString()} results
+                        <CardAction>
+                            <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
+                                <div className="relative w-full sm:w-72">
+                                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                    <Input
+                                        type="text"
+                                        placeholder="Search name, ID, or school…"
+                                        value={search}
+                                        onChange={(e) => handleSearchChange(e.target.value)}
+                                        className="bg-background/60 pl-9 pr-9"
+                                    />
+                                    {search && (
+                                        <button
+                                            type="button"
+                                            onClick={clearSearch}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                                        >
+                                            <X className="h-4 w-4" />
+                                        </button>
+                                    )}
                                 </div>
-                                <div className="flex items-center gap-1">
-                                    {placements.links.map((link, idx) => (
-                                        <Button
-                                            key={idx}
-                                            variant={link.active ? 'default' : 'outline'}
-                                            size="sm"
-                                            disabled={!link.url}
-                                            onClick={() => handlePageChange(link.url)}
-                                            dangerouslySetInnerHTML={{ __html: link.label }}
-                                            className="min-w-[2.5rem]"
-                                        />
-                                    ))}
+                                <div className="flex items-center gap-2">
+                                    <span className="text-sm text-muted-foreground">Rows</span>
+                                    <Select value={String(filters.per_page)} onValueChange={handlePerPageChange}>
+                                        <SelectTrigger className="w-24 bg-background/60">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="10">10</SelectItem>
+                                            <SelectItem value="25">25</SelectItem>
+                                            <SelectItem value="50">50</SelectItem>
+                                            <SelectItem value="100">100</SelectItem>
+                                        </SelectContent>
+                                    </Select>
                                 </div>
                             </div>
-                        )}
+                        </CardAction>
+                    </CardHeader>
+                    <CardContent className="px-0">
+                        <Table>
+                            <TableHeader className="bg-muted/30">
+                                <TableRow className="hover:bg-muted/30">
+                                    <TableHead className="px-6">Student</TableHead>
+                                    <TableHead className="px-6">Gender</TableHead>
+                                    <TableHead className="px-6">Feeder School</TableHead>
+                                    <TableHead className="px-6">Placement School</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {placements.data.length === 0 ? (
+                                    <TableRow className="hover:bg-transparent">
+                                        <TableCell colSpan={4} className="px-6 py-12">
+                                            <div className="flex flex-col items-center gap-2 text-center">
+                                                <div className="text-sm font-medium">No results</div>
+                                                <div className="text-sm text-muted-foreground">
+                                                    {filters.search
+                                                        ? 'Try a different search, or clear the filter.'
+                                                        : 'Student placement records will appear here.'}
+                                                </div>
+                                                {filters.search && (
+                                                    <Button variant="outline" size="sm" className="mt-2" onClick={clearSearch}>
+                                                        Clear search
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ) : (
+                                    placements.data.map((placement) => (
+                                        <TableRow key={placement.id} className="odd:bg-muted/15">
+                                            <TableCell className="px-6 whitespace-normal">
+                                                <div className="flex flex-col gap-1">
+                                                    <div className="font-medium">{placement.student_name}</div>
+                                                    <div className="text-xs text-muted-foreground">
+                                                        <code className="rounded bg-muted px-1.5 py-0.5">
+                                                            {placement.national_student_id}
+                                                        </code>
+                                                    </div>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="px-6">
+                                                <Badge variant={placement.gender === 'M' ? 'default' : 'secondary'}>
+                                                    {placement.gender === 'M' ? 'Male' : 'Female'}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell className="px-6 whitespace-normal text-sm text-muted-foreground">
+                                                {placement.feeder_school_name}
+                                            </TableCell>
+                                            <TableCell className="px-6 whitespace-normal text-sm">
+                                                {placement.year_7_placement_school_name}
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                )}
+                            </TableBody>
+                        </Table>
                     </CardContent>
+
+                    {/* Pagination */}
+                    {placements.last_page > 1 && (
+                        <CardFooter className="flex flex-col items-center justify-between gap-4 border-t sm:flex-row">
+                            <div className="text-sm text-muted-foreground">
+                                Showing {placements.from} to {placements.to} of {placements.total.toLocaleString()} results
+                            </div>
+                            <div className="flex items-center gap-1">
+                                {placements.links.map((link, idx) => (
+                                    <Button
+                                        key={idx}
+                                        variant={link.active ? 'default' : 'outline'}
+                                        size="sm"
+                                        disabled={!link.url}
+                                        onClick={() => handlePageChange(link.url)}
+                                        dangerouslySetInnerHTML={{ __html: link.label }}
+                                        className="min-w-[2.5rem]"
+                                    />
+                                ))}
+                            </div>
+                        </CardFooter>
+                    )}
                 </Card>
             </div>
         </AppLayout>
