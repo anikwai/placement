@@ -55,7 +55,7 @@ class StudentPlacementImporter
      *
      * @return array{imported: int, skipped: int}
      */
-    public function import(string $filePath): array
+    public function import(string $filePath, int $year): array
     {
         if (! file_exists($filePath)) {
             throw new \InvalidArgumentException("File not found: {$filePath}");
@@ -65,11 +65,29 @@ class StudentPlacementImporter
 
         $this->readCsv($filePath)
             ->chunk(self::CHUNK_SIZE)
-            ->each(function (LazyCollection $chunk) {
+
+            ->each(function (LazyCollection $chunk) use ($year) {
+                $rows = $chunk->all();
+
+                // Build mapping of existing records to check for duplicates
+                // Key: feeder_school_name|student_name
+                $names = collect($rows)->map(fn ($row) => $row[1] ?? null)->filter()->map(fn ($n) => trim($n));
+                
+                $existingRecords = StudentPlacement::query()
+                    ->where('academic_year', $year)
+                    ->whereIn('student_name', $names)
+                    ->get()
+                    ->keyBy(fn ($item) => $item->feeder_school_name . '|' . $item->student_name);
+
                 $records = [];
 
-                foreach ($chunk as $row) {
-                    $record = $this->prepareRecord($row);
+                foreach ($rows as $row) {
+                    if (count($row) < 2) continue;
+                    
+                    $key = trim($row[0]) . '|' . trim($row[1]);
+                    $existingId = $existingRecords[$key]->national_student_id ?? null;
+
+                    $record = $this->prepareRecord($row, $year, $existingId);
 
                     if ($record === null) {
                         $this->skippedCount++;
@@ -85,7 +103,7 @@ class StudentPlacementImporter
                     StudentPlacement::upsert(
                         $records,
                         ['national_student_id'],
-                        ['feeder_school_name', 'student_name', 'gender', 'year_7_placement_school_name']
+                        ['feeder_school_name', 'student_name', 'gender', 'year_7_placement_school_name', 'academic_year']
                     );
                 }
 
@@ -131,7 +149,7 @@ class StudentPlacementImporter
      * @param  array<int, string>  $row
      * @return array<string, string>|null
      */
-    private function prepareRecord(array $row): ?array
+    private function prepareRecord(array $row, int $year, ?string $existingId = null): ?array
     {
         if (count($row) < 4) {
             return null;
@@ -146,11 +164,12 @@ class StudentPlacementImporter
         $now = now();
 
         return [
-            'national_student_id' => $this->generateNationalStudentId(),
+            'national_student_id' => $existingId ?? $this->generateNationalStudentId(),
             'feeder_school_name' => trim($feederSchool),
             'student_name' => trim($studentName),
             'gender' => trim($gender),
             'year_7_placement_school_name' => trim($placementSchool),
+            'academic_year' => $year,
             'created_at' => $now,
             'updated_at' => $now,
         ];
