@@ -19,6 +19,7 @@ interface StudentPlacement {
     feeder_school_name: string;
     gender: string;
     year_7_placement_school_name: string;
+    academic_year: number | null;
 }
 
 interface PaginatedData<T> {
@@ -41,12 +42,14 @@ interface Props {
     filters: {
         search: string;
         per_page: number;
+        academic_year: string;
     };
     stats: {
         total_students: number;
         feeder_schools: number;
         placement_schools: number;
     };
+    academic_years: number[];
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -56,14 +59,19 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-export default function PlacementsIndex({ placements, filters, stats }: Props) {
+export default function PlacementsIndex({ placements, filters, stats, academic_years }: Props) {
     const [search, setSearch] = useState(filters.search);
+    const [academicYear, setAcademicYear] = useState(filters.academic_year);
 
     const debouncedSearch = useMemo(() => {
-        return debounce((value: string) => {
+        return debounce((value: string, year: string) => {
             router.get(
                 index().url,
-                { search: value || undefined, per_page: filters.per_page },
+                {
+                    search: value || undefined,
+                    per_page: filters.per_page,
+                    academic_year: year || undefined,
+                },
                 { preserveState: true, preserveScroll: true }
             );
         }, 300);
@@ -77,11 +85,18 @@ export default function PlacementsIndex({ placements, filters, stats }: Props) {
 
     const handleSearchChange = (value: string) => {
         setSearch(value);
-        debouncedSearch(value);
+        debouncedSearch(value, academicYear);
+    };
+
+    const handleAcademicYearChange = (value: string) => {
+        const year = value === 'all' ? '' : value;
+        setAcademicYear(year);
+        debouncedSearch(search, year);
     };
 
     const clearSearch = () => {
         setSearch('');
+        setAcademicYear('');
         debouncedSearch.cancel();
         router.get(index().url, { per_page: filters.per_page }, { preserveState: true });
     };
@@ -90,7 +105,11 @@ export default function PlacementsIndex({ placements, filters, stats }: Props) {
         debouncedSearch.cancel();
         router.get(
             index().url,
-            { search: search || undefined, per_page: parseInt(value) },
+            {
+                search: search || undefined,
+                per_page: parseInt(value),
+                academic_year: academicYear || undefined,
+            },
             { preserveState: true }
         );
     };
@@ -211,6 +230,25 @@ export default function PlacementsIndex({ placements, filters, stats }: Props) {
                                         </SelectContent>
                                     </Select>
                                 </div>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-sm text-muted-foreground">Year</span>
+                                    <Select
+                                        value={academicYear || 'all'}
+                                        onValueChange={handleAcademicYearChange}
+                                    >
+                                        <SelectTrigger className="w-32 bg-background/60">
+                                            <SelectValue placeholder="All Years" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All Years</SelectItem>
+                                            {academic_years.map((year) => (
+                                                <SelectItem key={year} value={String(year)}>
+                                                    {year}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                             </div>
                         </CardAction>
                     </CardHeader>
@@ -222,12 +260,13 @@ export default function PlacementsIndex({ placements, filters, stats }: Props) {
                                     <TableHead className="px-6">Gender</TableHead>
                                     <TableHead className="px-6">Feeder School</TableHead>
                                     <TableHead className="px-6">Placement School</TableHead>
+                                    <TableHead className="px-6">Year</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {placements.data.length === 0 ? (
                                     <TableRow className="hover:bg-transparent">
-                                        <TableCell colSpan={4} className="px-6 py-12">
+                                        <TableCell colSpan={5} className="px-6 py-12">
                                             <div className="flex flex-col items-center gap-2 text-center">
                                                 <div className="text-sm font-medium">No results</div>
                                                 <div className="text-sm text-muted-foreground">
@@ -266,6 +305,9 @@ export default function PlacementsIndex({ placements, filters, stats }: Props) {
                                             </TableCell>
                                             <TableCell className="px-6 whitespace-normal text-sm">
                                                 {placement.year_7_placement_school_name}
+                                            </TableCell>
+                                            <TableCell className="px-6 whitespace-nowrap text-sm text-muted-foreground">
+                                                {placement.academic_year || '—'}
                                             </TableCell>
                                         </TableRow>
                                     ))
