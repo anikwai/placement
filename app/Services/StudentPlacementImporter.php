@@ -72,19 +72,21 @@ class StudentPlacementImporter
                 // Build mapping of existing records to check for duplicates
                 // Key: feeder_school_name|student_name
                 $names = collect($rows)->map(fn ($row) => $row[1] ?? null)->filter()->map(fn ($n) => trim($n));
-                
+
                 $existingRecords = StudentPlacement::query()
                     ->where('academic_year', $year)
                     ->whereIn('student_name', $names)
                     ->get()
-                    ->keyBy(fn ($item) => $item->feeder_school_name . '|' . $item->student_name);
+                    ->keyBy(fn ($item) => $item->feeder_school_name.'|'.$item->student_name);
 
                 $records = [];
 
                 foreach ($rows as $row) {
-                    if (count($row) < 2) continue;
-                    
-                    $key = trim($row[0]) . '|' . trim($row[1]);
+                    if (count($row) < 2) {
+                        continue;
+                    }
+
+                    $key = trim($row[0]).'|'.trim($row[1]);
                     $existingId = $existingRecords[$key]->national_student_id ?? null;
 
                     $record = $this->prepareRecord($row, $year, $existingId);

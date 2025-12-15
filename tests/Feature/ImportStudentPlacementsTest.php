@@ -1,6 +1,5 @@
 <?php
 
-use App\Models\StudentPlacement;
 use Illuminate\Support\Facades\File;
 
 afterEach(function () {
