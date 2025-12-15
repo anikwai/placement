@@ -192,6 +192,7 @@ return [
                         ['name' => 'feeder_school_name', 'type' => 'string', 'facet' => true],
                         ['name' => 'gender', 'type' => 'string', 'facet' => true],
                         ['name' => 'year_7_placement_school_name', 'type' => 'string', 'facet' => true],
+                        ['name' => 'academic_year', 'type' => 'int32', 'facet' => true],
                         ['name' => 'created_at', 'type' => 'int64'],
                     ],
                     'default_sorting_field' => 'created_at',
