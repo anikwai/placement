@@ -32,8 +32,8 @@ import {
 import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import { download as placementsDownload } from '@/routes/placements';
-import { type BreadcrumbItem } from '@/types';
-import { Head, router } from '@inertiajs/react';
+import { type BreadcrumbItem, type SharedData } from '@/types';
+import { Head, router, usePage } from '@inertiajs/react';
 import { format, parseISO } from 'date-fns';
 import { CalendarDays, Download } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
@@ -92,6 +92,22 @@ export default function Dashboard({
     academicYears,
     dateRangeBounds,
 }: Props) {
+    const { auth } = usePage<SharedData>().props;
+    const firstName = auth.user.name.split(' ')[0] ?? auth.user.name;
+    const greeting = (() => {
+        const hour = new Date().getHours();
+
+        if (hour < 12) {
+            return 'Good morning';
+        }
+
+        if (hour < 18) {
+            return 'Good afternoon';
+        }
+
+        return 'Good evening';
+    })();
+
     const genderData = [
         {
             name: 'male',
@@ -210,7 +226,11 @@ export default function Dashboard({
                                 Placement Dashboard
                             </h1>
                             <p className="text-sm text-muted-foreground">
-                                Overview of Year 7 student placements
+                                {greeting},{' '}
+                                <span className="font-medium text-foreground">
+                                    {firstName}
+                                </span>
+                                . Overview of Year 7 student placements
                             </p>
                         </div>
                         <div className="flex items-center gap-2">
