@@ -1,3 +1,4 @@
+import AppLogoIcon from '@/components/app-logo-icon';
 import {
     Accordion,
     AccordionContent,
@@ -11,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 
 import { useAppearance } from '@/hooks/use-appearance';
-import { dashboard, login, register } from '@/routes';
+import { dashboard, home, login, register } from '@/routes';
 import { type SharedData } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { motion } from 'framer-motion';
@@ -53,8 +54,9 @@ type SortField =
     | 'year_7_placement_school_name';
 
 export default function Welcome({ canRegister = true, stats }: Props) {
-    const { auth } = usePage<SharedData>().props;
+    const { auth, name, ui } = usePage<SharedData>().props;
     const { appearance, updateAppearance } = useAppearance();
+    const logoText = ui?.logoText?.trim() || name;
     const [search, setSearch] = useState('');
     const [results, setResults] = useState<StudentPlacement[]>([]);
     const [totalResults, setTotalResults] = useState(0);
@@ -232,14 +234,14 @@ export default function Welcome({ canRegister = true, stats }: Props) {
                 {/* Header */}
                 <header className="fixed top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-sm">
                     <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
-                        <div className="flex items-center gap-3">
+                        <Link href={home()} className="flex items-center gap-3">
                             <div className="flex h-9 w-9 items-center justify-center rounded-md border border-border bg-muted text-foreground">
-                                <GraduationCap className="h-5 w-5" />
+                                <AppLogoIcon className="size-5 fill-current text-foreground" />
                             </div>
                             <span className="text-sm font-bold tracking-tight">
-                                Placement Search
+                                {logoText}
                             </span>
-                        </div>
+                        </Link>
 
                         <div className="flex items-center gap-4">
                             <Button
@@ -588,12 +590,18 @@ export default function Welcome({ canRegister = true, stats }: Props) {
 
                 <footer className="mt-auto border-t border-border bg-background py-10">
                     <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 px-6 sm:flex-row">
-                        <p className="text-sm font-medium text-muted-foreground">
-                            &copy; {new Date().getFullYear()}{' '}
-                            <a href="https://github.com/anikwai/placement.git">
-                                Placement System
-                            </a>
-                        </p>
+                        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                            <AppLogoIcon className="size-4 fill-current" />
+                            <p>
+                                &copy; {new Date().getFullYear()}{' '}
+                                <a
+                                    href="https://github.com/anikwai/placement.git"
+                                    className="font-semibold text-foreground/80 hover:text-foreground"
+                                >
+                                    {logoText}
+                                </a>
+                            </p>
+                        </div>
                     </div>
                 </footer>
             </div>
