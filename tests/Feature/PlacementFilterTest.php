@@ -21,9 +21,12 @@ test('placements can be filtered by academic year', function () {
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('dashboard')
-            ->has('placements.data', 1)
-            ->where('placements.data.0.student_name', 'Student 2026')
             ->where('placementFilters.academic_year', '2026')
+            ->missing('placements')
+            ->loadDeferredProps('dashboard', fn (Assert $reload) => $reload
+                ->has('placements.data', 1)
+                ->where('placements.data.0.student_name', 'Student 2026')
+            )
         );
 });
 
