@@ -423,14 +423,15 @@ export default function Welcome({ canRegister = true, stats }: Props) {
                                                         </div>
                                                         <Badge
                                                             variant="outline"
-                                                            className={`rounded-md border-0 bg-secondary/50 px-2 py-0.5 text-[10px] font-semibold tracking-wider uppercase ${student.gender ===
+                                                            className={`rounded-md border-0 bg-secondary/50 px-2 py-0.5 text-[10px] font-semibold tracking-wider uppercase ${
+                                                                student.gender ===
                                                                 'M'
-                                                                ? 'text-blue-600 dark:text-blue-300'
-                                                                : 'text-rose-600 dark:text-rose-300'
-                                                                }`}
+                                                                    ? 'text-blue-600 dark:text-blue-300'
+                                                                    : 'text-rose-600 dark:text-rose-300'
+                                                            }`}
                                                         >
                                                             {student.gender ===
-                                                                'M'
+                                                            'M'
                                                                 ? 'Male'
                                                                 : 'Female'}
                                                         </Badge>
@@ -546,9 +547,8 @@ export default function Welcome({ canRegister = true, stats }: Props) {
                                     >
                                         {[
                                             {
-                                                question:
-                                                    'How do I search?',
-                                                answer: "Enter full name, student ID, feeder school name, or year 7 placement school name in the search box above. Results will appear as you type once you enter at least 2 characters.",
+                                                question: 'How do I search?',
+                                                answer: 'Enter full name, student ID, feeder school name, or year 7 placement school name in the search box above. Results will appear as you type once you enter at least 2 characters.',
                                             },
                                             {
                                                 question:
@@ -558,7 +558,7 @@ export default function Welcome({ canRegister = true, stats }: Props) {
                                             {
                                                 question:
                                                     "What if I can't find my name?",
-                                                answer: "Verify the spelling of the name and try different variations. If still not found, please contact your feeder school for assistance.",
+                                                answer: 'Verify the spelling of the name and try different variations. If still not found, please contact your feeder school for assistance.',
                                             },
                                             {
                                                 question:
@@ -590,7 +590,9 @@ export default function Welcome({ canRegister = true, stats }: Props) {
                     <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 px-6 sm:flex-row">
                         <p className="text-sm font-medium text-muted-foreground">
                             &copy; {new Date().getFullYear()}{' '}
-                            <a href="https://github.com/anikwai/placement.git">Placement System</a>
+                            <a href="https://github.com/anikwai/placement.git">
+                                Placement System
+                            </a>
                         </p>
                     </div>
                 </footer>
