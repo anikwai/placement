@@ -934,6 +934,9 @@ export default function Dashboard({
                                 <CardTitle className="text-base font-bold text-foreground">
                                     Gender Split
                                 </CardTitle>
+                                <CardDescription className="text-xs text-muted-foreground">
+                                    Year 7 exam passers who received a placement
+                                </CardDescription>
                             </CardHeader>
                             <CardContent className="flex flex-col items-center justify-center p-4">
                                 {isLoading ? (
@@ -1010,7 +1013,7 @@ export default function Dashboard({
                                                                         }
                                                                         className="fill-muted-foreground text-xs"
                                                                     >
-                                                                        TOTAL
+                                                                        PLACED
                                                                     </tspan>
                                                                 </text>
                                                             );
