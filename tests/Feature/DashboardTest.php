@@ -15,15 +15,22 @@ test('authenticated users can visit the dashboard', function () {
         ->assertInertia(fn (Assert $page) => $page
             ->component('dashboard')
             ->where('ui.logoText', 'Placement')
-            ->has('stats')
-            ->has('topFeederSchools')
-            ->has('topPlacementSchools')
-            ->has('placements')
+            ->missing('stats')
+            ->missing('topFeederSchools')
+            ->missing('topPlacementSchools')
+            ->missing('placements')
             ->has('placementFilters')
             ->where('placementFilters.from', '')
             ->where('placementFilters.to', '')
-            ->has('placementStats')
+            ->missing('placementStats')
             ->has('academicYears')
             ->has('dateRangeBounds')
+            ->loadDeferredProps('dashboard', fn (Assert $reload) => $reload
+                ->has('stats')
+                ->has('topFeederSchools')
+                ->has('topPlacementSchools')
+                ->has('placements')
+                ->has('placementStats')
+            )
         );
 });
