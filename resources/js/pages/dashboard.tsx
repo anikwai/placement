@@ -83,6 +83,88 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
+interface AxisTickProps {
+    x?: number;
+    y?: number;
+    payload?: { value?: string };
+}
+
+function truncateLabel(value: string, maxLength: number): string {
+    if (value.length <= maxLength) {
+        return value;
+    }
+
+    return `${value.slice(0, Math.max(0, maxLength - 1))}…`;
+}
+
+function splitLabelIntoTwoLines(value: string): {
+    line1: string;
+    line2: string | null;
+} {
+    const trimmed = value.trim();
+
+    if (trimmed === '') {
+        return { line1: '', line2: null };
+    }
+
+    const words = trimmed.split(/\s+/).filter(Boolean);
+
+    if (words.length <= 1) {
+        return { line1: truncateLabel(trimmed, 20), line2: null };
+    }
+
+    const maxLine1 = 18;
+    const maxLine2 = 20;
+    const line1Words: string[] = [];
+    const line2Words: string[] = [];
+
+    for (const word of words) {
+        const nextLine1 = [...line1Words, word].join(' ').trim();
+
+        if (line1Words.length === 0 || nextLine1.length <= maxLine1) {
+            line1Words.push(word);
+            continue;
+        }
+
+        line2Words.push(word);
+    }
+
+    if (line2Words.length === 0) {
+        return { line1: truncateLabel(trimmed, 20), line2: null };
+    }
+
+    return {
+        line1: line1Words.join(' '),
+        line2: truncateLabel(line2Words.join(' '), maxLine2),
+    };
+}
+
+function PlacementSchoolTick({ x = 0, y = 0, payload }: AxisTickProps) {
+    const value = payload?.value ?? '';
+    const { line1, line2 } = splitLabelIntoTwoLines(value);
+
+    return (
+        <g transform={`translate(${x},${y})`}>
+            <text
+                textAnchor="middle"
+                fill="var(--color-muted-foreground)"
+                fontSize={11}
+                fontWeight={500}
+            >
+                <title>{value}</title>
+                <tspan x={0} dy={18}>
+                    {line1}
+                </tspan>
+                {line2 ? (
+                    <tspan x={0} dy={14}>
+                        {line2}
+                    </tspan>
+                ) : null}
+            </text>
+        </g>
+    );
+}
+
 export default function Dashboard({
     stats,
     topFeederSchools,
@@ -148,11 +230,15 @@ export default function Dashboard({
     const [topPlacementView, setTopPlacementView] = useState<'graph' | 'table'>(
         'graph',
     );
+    const [activeTopPlacementIndex, setActiveTopPlacementIndex] = useState<
+        number | null
+    >(null);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const refreshShowTimeoutRef = useRef<number | null>(null);
     const refreshHideTimeoutRef = useRef<number | null>(null);
     const refreshStartedAtRef = useRef<number | null>(null);
     const isLoading = isRefreshing || isDeferredLoading;
+    const highlightedTopPlacementIndex = activeTopPlacementIndex ?? 0;
 
     const malePercent = safeStats.totalStudents
         ? (safeStats.maleCount / safeStats.totalStudents) * 100
@@ -501,7 +587,7 @@ export default function Dashboard({
                                                 left: 20,
                                                 right: 20,
                                                 top: 20,
-                                                bottom: 20,
+                                                bottom: 36,
                                             }}
                                         >
                                             <defs>
@@ -515,12 +601,30 @@ export default function Dashboard({
                                                     <stop
                                                         offset="5%"
                                                         stopColor="var(--color-chart-1)"
-                                                        stopOpacity={0.8}
+                                                        stopOpacity={0.9}
                                                     />
                                                     <stop
                                                         offset="95%"
                                                         stopColor="var(--color-chart-1)"
-                                                        stopOpacity={0.1}
+                                                        stopOpacity={0.12}
+                                                    />
+                                                </linearGradient>
+                                                <linearGradient
+                                                    id="colorStudentActive"
+                                                    x1="0"
+                                                    y1="0"
+                                                    x2="0"
+                                                    y2="1"
+                                                >
+                                                    <stop
+                                                        offset="5%"
+                                                        stopColor="var(--color-primary)"
+                                                        stopOpacity={0.95}
+                                                    />
+                                                    <stop
+                                                        offset="95%"
+                                                        stopColor="var(--color-primary)"
+                                                        stopOpacity={0.22}
                                                     />
                                                 </linearGradient>
                                             </defs>
@@ -533,20 +637,11 @@ export default function Dashboard({
                                             <XAxis
                                                 dataKey="year_7_placement_school_name"
                                                 tickLine={false}
-                                                tickMargin={15}
+                                                tickMargin={14}
                                                 axisLine={false}
-                                                tick={{
-                                                    fill: 'var(--color-muted-foreground)',
-                                                    fontSize: 11,
-                                                    fontWeight: 500,
-                                                }}
-                                                tickFormatter={(
-                                                    value: string,
-                                                ) =>
-                                                    value.length > 10
-                                                        ? `${value.slice(0, 10)}...`
-                                                        : value
-                                                }
+                                                tick={<PlacementSchoolTick />}
+                                                interval={0}
+                                                height={56}
                                             />
                                             <YAxis
                                                 axisLine={false}
@@ -562,9 +657,7 @@ export default function Dashboard({
                                                     fill: 'var(--color-muted)',
                                                 }}
                                                 content={
-                                                    <ChartTooltipContent
-                                                        hideLabel
-                                                    />
+                                                    <ChartTooltipContent />
                                                 }
                                             />
                                             <Bar
@@ -572,7 +665,39 @@ export default function Dashboard({
                                                 fill="url(#colorStudent)"
                                                 radius={[6, 6, 0, 0]}
                                                 barSize={32}
-                                            />
+                                                onMouseLeave={() =>
+                                                    setActiveTopPlacementIndex(
+                                                        null,
+                                                    )
+                                                }
+                                                onMouseEnter={(_, index) =>
+                                                    setActiveTopPlacementIndex(
+                                                        index,
+                                                    )
+                                                }
+                                            >
+                                                {safeTopPlacementSchools.map(
+                                                    (_, index) => (
+                                                        <Cell
+                                                            key={`placement-bar-${index}`}
+                                                            fill={
+                                                                index ===
+                                                                highlightedTopPlacementIndex
+                                                                    ? 'url(#colorStudentActive)'
+                                                                    : 'url(#colorStudent)'
+                                                            }
+                                                            stroke="transparent"
+                                                            strokeWidth={0}
+                                                            opacity={
+                                                                index ===
+                                                                highlightedTopPlacementIndex
+                                                                    ? 1
+                                                                    : 1
+                                                            }
+                                                        />
+                                                    ),
+                                                )}
+                                            </Bar>
                                         </BarChart>
                                     </ChartContainer>
                                 ) : (
