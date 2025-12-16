@@ -1,4 +1,9 @@
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import {
+    Accordion,
+    AccordionContent,
+    AccordionItem,
+    AccordionTrigger,
+} from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -9,9 +14,17 @@ import { useAppearance } from '@/hooks/use-appearance';
 import { dashboard, login, register } from '@/routes';
 import { type SharedData } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
-import { FileSearch, GraduationCap, Moon, Search, Sun, Users, X } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
+import {
+    FileSearch,
+    GraduationCap,
+    Moon,
+    Search,
+    Sun,
+    Users,
+    X,
+} from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface StudentPlacement {
     id: number;
@@ -33,8 +46,11 @@ interface Props {
     stats: Stats;
 }
 
-type SortField = 'student_name' | 'national_student_id' | 'feeder_school_name' | 'year_7_placement_school_name';
-
+type SortField =
+    | 'student_name'
+    | 'national_student_id'
+    | 'feeder_school_name'
+    | 'year_7_placement_school_name';
 
 export default function Welcome({ canRegister = true, stats }: Props) {
     const { auth } = usePage<SharedData>().props;
@@ -63,7 +79,9 @@ export default function Welcome({ canRegister = true, stats }: Props) {
 
         setIsLoading(true);
         try {
-            const response = await fetch(`/api/placements/search?q=${encodeURIComponent(query)}`);
+            const response = await fetch(
+                `/api/placements/search?q=${encodeURIComponent(query)}`,
+            );
             const data = await response.json();
             setResults(data.data);
             setTotalResults(data.total);
@@ -95,7 +113,7 @@ export default function Welcome({ canRegister = true, stats }: Props) {
             const response = await fetch(url.toString());
             const data = await response.json();
 
-            setResults(prev => [...prev, ...data.data]);
+            setResults((prev) => [...prev, ...data.data]);
             setNextPageUrl(data.next_page_url);
         } catch {
             // Handle error silently or show toast
@@ -131,8 +149,6 @@ export default function Welcome({ canRegister = true, stats }: Props) {
         searchInputRef.current?.focus();
     };
 
-
-
     const sortedResults = [...results].sort((a, b) => {
         const aValue = String(a[sortField]).toLowerCase();
         const bValue = String(b[sortField]).toLowerCase();
@@ -154,50 +170,60 @@ export default function Welcome({ canRegister = true, stats }: Props) {
         };
     }, []);
 
-
-
     // Animation variants
     const fadeInUp = {
         initial: { opacity: 0, y: 30 },
         animate: { opacity: 1, y: 0 },
-        transition: { duration: 0.8, ease: "easeOut" }
+        transition: { duration: 0.8, ease: 'easeOut' },
     };
 
     const staggerContainer = {
         animate: {
             transition: {
-                staggerChildren: 0.15
-            }
-        }
+                staggerChildren: 0.15,
+            },
+        },
     };
 
     return (
         <>
             <Head title="Year 7 Placement Results" />
 
-            <div className="relative min-h-screen flex flex-col bg-background font-sans text-foreground selection:bg-primary selection:text-primary-foreground overflow-hidden">
+            <div className="relative flex min-h-screen flex-col overflow-hidden bg-background font-sans text-foreground selection:bg-primary selection:text-primary-foreground">
                 {/* Precision Geometric Background - Animated */}
-                <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+                <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
                     <div className="absolute inset-0 bg-[radial-gradient(var(--border)_1px,transparent_1px)] [background-size:20px_20px] opacity-[0.25]"></div>
 
                     {/* Rotating Rings - Precision/Architectural Feel */}
-                    <div className="absolute top-[-10%] left-[-10%] md:left-[50%] md:top-[40%] md:-translate-x-1/2 md:-translate-y-1/2 w-[600px] h-[600px] md:w-[800px] md:h-[800px]">
+                    <div className="absolute top-[-10%] left-[-10%] h-[600px] w-[600px] md:top-[40%] md:left-[50%] md:h-[800px] md:w-[800px] md:-translate-x-1/2 md:-translate-y-1/2">
                         {/* Ring 1 - Outer Dashed - Slower */}
                         <motion.div
                             animate={{ rotate: 360 }}
-                            transition={{ duration: 50, repeat: Infinity, ease: "linear" }}
+                            transition={{
+                                duration: 50,
+                                repeat: Infinity,
+                                ease: 'linear',
+                            }}
                             className="absolute inset-0 rounded-full border border-dashed border-primary/20 opacity-60"
                         />
                         {/* Ring 2 - Middle Solid - Medium */}
                         <motion.div
                             animate={{ rotate: -360 }}
-                            transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
+                            transition={{
+                                duration: 40,
+                                repeat: Infinity,
+                                ease: 'linear',
+                            }}
                             className="absolute inset-[100px] rounded-full border border-border/60 opacity-40"
                         />
                         {/* Ring 3 - Inner Dashed - Faster */}
                         <motion.div
                             animate={{ rotate: 360 }}
-                            transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
+                            transition={{
+                                duration: 30,
+                                repeat: Infinity,
+                                ease: 'linear',
+                            }}
                             className="absolute inset-[200px] rounded-full border border-dashed border-primary/30 opacity-50"
                         />
                     </div>
@@ -210,7 +236,9 @@ export default function Welcome({ canRegister = true, stats }: Props) {
                             <div className="flex h-9 w-9 items-center justify-center rounded-md border border-border bg-muted text-foreground">
                                 <GraduationCap className="h-5 w-5" />
                             </div>
-                            <span className="text-sm font-bold tracking-tight">Placement Search</span>
+                            <span className="text-sm font-bold tracking-tight">
+                                Placement Search
+                            </span>
                         </div>
 
                         <div className="flex items-center gap-4">
@@ -221,7 +249,11 @@ export default function Welcome({ canRegister = true, stats }: Props) {
                                 className="h-9 w-9 text-muted-foreground hover:text-foreground"
                                 aria-label="Toggle theme"
                             >
-                                {appearance === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                                {appearance === 'dark' ? (
+                                    <Sun className="h-4 w-4" />
+                                ) : (
+                                    <Moon className="h-4 w-4" />
+                                )}
                             </Button>
 
                             <div className="h-4 w-px bg-border" />
@@ -229,7 +261,7 @@ export default function Welcome({ canRegister = true, stats }: Props) {
                             {auth.user ? (
                                 <Link
                                     href={dashboard()}
-                                    className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                                    className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
                                 >
                                     Dashboard
                                 </Link>
@@ -237,13 +269,18 @@ export default function Welcome({ canRegister = true, stats }: Props) {
                                 <div className="flex items-center gap-4">
                                     <Link
                                         href={login()}
-                                        className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                                        className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
                                     >
                                         Log in
                                     </Link>
                                     {canRegister && (
-                                        <Button asChild className="bg-primary text-primary-foreground shadow-sm hover:bg-primary/90">
-                                            <Link href={register()}>Register</Link>
+                                        <Button
+                                            asChild
+                                            className="bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
+                                        >
+                                            <Link href={register()}>
+                                                Register
+                                            </Link>
                                         </Button>
                                     )}
                                 </div>
@@ -261,37 +298,45 @@ export default function Welcome({ canRegister = true, stats }: Props) {
                     >
                         {/* Hero Badge - Solid & Crisp */}
 
-
                         <motion.div variants={fadeInUp}>
-                            <h1 className="text-5xl font-bold tracking-tight text-foreground sm:text-6xl mb-6">
+                            <h1 className="mb-6 text-5xl font-bold tracking-tight text-foreground sm:text-6xl">
                                 Find student placements <br />
-                                <span className="text-primary dark:text-blue-400">instantly.</span>
+                                <span className="text-primary dark:text-blue-400">
+                                    instantly.
+                                </span>
                             </h1>
                         </motion.div>
 
                         <motion.div variants={fadeInUp}>
-                            <p className="text-xl text-muted-foreground mb-12 max-w-2xl mx-auto leading-relaxed">
-                                A secure, streamlined way to access Year 7 placement information using confirmed student details.
+                            <p className="mx-auto mb-12 max-w-2xl text-xl leading-relaxed text-muted-foreground">
+                                A secure, streamlined way to access Year 7
+                                placement information using confirmed student
+                                details.
                             </p>
                         </motion.div>
 
                         {/* Search Input - Clean & Boxy */}
-                        <motion.div variants={fadeInUp} className="relative max-w-xl mx-auto mb-12 group">
-                            <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none z-10" />
+                        <motion.div
+                            variants={fadeInUp}
+                            className="group relative mx-auto mb-12 max-w-xl"
+                        >
+                            <Search className="pointer-events-none absolute top-1/2 left-5 z-10 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
                             <Input
                                 ref={searchInputRef}
                                 type="text"
-                                className="w-full rounded-lg border-border bg-background dark:bg-muted/30 dark:border-primary/30 py-6 pl-14 pr-14 text-lg shadow-sm placeholder:text-muted-foreground focus-visible:ring-primary h-auto transition-shadow duration-300 hover:shadow-md"
+                                className="h-auto w-full rounded-lg border-border bg-background py-6 pr-14 pl-14 text-lg shadow-sm transition-shadow duration-300 placeholder:text-muted-foreground hover:shadow-md focus-visible:ring-primary dark:border-primary/30 dark:bg-muted/30"
                                 placeholder="Search by name or ID..."
                                 value={search}
-                                onChange={(e) => handleSearchChange(e.target.value)}
+                                onChange={(e) =>
+                                    handleSearchChange(e.target.value)
+                                }
                             />
                             {search && (
                                 <Button
                                     variant="ghost"
                                     size="icon"
                                     onClick={clearSearch}
-                                    className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-foreground"
+                                    className="absolute top-1/2 right-2 h-8 w-8 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                                 >
                                     <X className="h-4 w-4" />
                                 </Button>
@@ -309,12 +354,15 @@ export default function Welcome({ canRegister = true, stats }: Props) {
                         )}
                     </motion.div>
 
-                    <div className="mx-auto max-w-6xl px-6 mt-16">
+                    <div className="mx-auto mt-16 max-w-6xl px-6">
                         {/* Loading State */}
                         {isLoading && (
                             <div className="grid gap-4">
                                 {[...Array(3)].map((_, i) => (
-                                    <div key={i} className="flex items-center justify-between p-6 border border-border rounded-lg bg-background">
+                                    <div
+                                        key={i}
+                                        className="flex items-center justify-between rounded-lg border border-border bg-background p-6"
+                                    >
                                         <Skeleton className="h-5 w-32" />
                                         <Skeleton className="h-5 w-48" />
                                         <Skeleton className="h-5 w-24" />
@@ -325,15 +373,21 @@ export default function Welcome({ canRegister = true, stats }: Props) {
 
                         {/* No Results */}
                         {!isLoading && hasSearched && results.length === 0 && (
-                            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
-                                <Card className="text-center py-20 border-dashed border-border shadow-none bg-background">
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                            >
+                                <Card className="border-dashed border-border bg-background py-20 text-center shadow-none">
                                     <CardContent className="pt-6">
-                                        <div className="bg-muted w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
+                                        <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
                                             <FileSearch className="h-8 w-8 text-muted-foreground" />
                                         </div>
-                                        <h3 className="text-lg font-bold text-foreground mb-2">No results found</h3>
+                                        <h3 className="mb-2 text-lg font-bold text-foreground">
+                                            No results found
+                                        </h3>
                                         <p className="text-muted-foreground">
-                                            We couldn't find any records matching "{search}".
+                                            We couldn't find any records
+                                            matching "{search}".
                                         </p>
                                     </CardContent>
                                 </Card>
@@ -343,7 +397,7 @@ export default function Welcome({ canRegister = true, stats }: Props) {
                         {/* Results Grid - Cards Layout */}
                         {!isLoading && sortedResults.length > 0 && (
                             <div className="space-y-8">
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                                     {sortedResults.map((student) => (
                                         <motion.div
                                             key={student.id}
@@ -351,39 +405,60 @@ export default function Welcome({ canRegister = true, stats }: Props) {
                                             initial="initial"
                                             animate="animate"
                                         >
-                                            <Card className="h-full border-border bg-card/50 dark:bg-muted/10 dark:border-white/5 hover:border-primary/50 transition-colors">
-                                                <CardContent className="p-6 flex flex-col h-full">
+                                            <Card className="h-full border-border bg-card/50 transition-colors hover:border-primary/50 dark:border-white/5 dark:bg-muted/10">
+                                                <CardContent className="flex h-full flex-col p-6">
                                                     {/* Header: Name & ID */}
-                                                    <div className="flex justify-between items-start mb-6">
+                                                    <div className="mb-6 flex items-start justify-between">
                                                         <div>
-                                                            <h3 className="font-bold text-lg leading-tight text-foreground">
-                                                                {student.student_name}
+                                                            <h3 className="text-lg leading-tight font-bold text-foreground">
+                                                                {
+                                                                    student.student_name
+                                                                }
                                                             </h3>
-                                                            <div className="font-mono text-xs text-muted-foreground mt-1">
-                                                                {student.national_student_id}
+                                                            <div className="mt-1 font-mono text-xs text-muted-foreground">
+                                                                {
+                                                                    student.national_student_id
+                                                                }
                                                             </div>
                                                         </div>
-                                                        <Badge variant="outline" className={`rounded-md border-0 bg-secondary/50 px-2 py-0.5 text-[10px] uppercase tracking-wider font-semibold ${student.gender === 'M'
-                                                            ? 'text-blue-600 dark:text-blue-300'
-                                                            : 'text-rose-600 dark:text-rose-300'}`}>
-                                                            {student.gender === 'M' ? 'Male' : 'Female'}
+                                                        <Badge
+                                                            variant="outline"
+                                                            className={`rounded-md border-0 bg-secondary/50 px-2 py-0.5 text-[10px] font-semibold tracking-wider uppercase ${
+                                                                student.gender ===
+                                                                'M'
+                                                                    ? 'text-blue-600 dark:text-blue-300'
+                                                                    : 'text-rose-600 dark:text-rose-300'
+                                                            }`}
+                                                        >
+                                                            {student.gender ===
+                                                            'M'
+                                                                ? 'Male'
+                                                                : 'Female'}
                                                         </Badge>
                                                     </div>
 
                                                     {/* Result Section (Pushed to bottom) */}
                                                     <div className="mt-auto">
-                                                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground/70 font-bold block mb-1.5">
+                                                        <span className="mb-1.5 block text-[10px] font-bold tracking-wider text-muted-foreground/70 uppercase">
                                                             Placed at
                                                         </span>
-                                                        <div className="text-xl md:text-2xl font-bold text-primary dark:text-blue-400 leading-tight mb-3">
-                                                            {student.year_7_placement_school_name}
+                                                        <div className="mb-3 text-xl leading-tight font-bold text-primary md:text-2xl dark:text-blue-400">
+                                                            {
+                                                                student.year_7_placement_school_name
+                                                            }
                                                         </div>
 
                                                         <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                                                            <span className="opacity-60 text-xs">from</span>
-                                                            <div className="font-medium text-foreground/80 flex items-center gap-1.5">
+                                                            <span className="text-xs opacity-60">
+                                                                from
+                                                            </span>
+                                                            <div className="flex items-center gap-1.5 font-medium text-foreground/80">
                                                                 <GraduationCap className="h-3.5 w-3.5 opacity-70" />
-                                                                <span className="line-clamp-1">{student.feeder_school_name}</span>
+                                                                <span className="line-clamp-1">
+                                                                    {
+                                                                        student.feeder_school_name
+                                                                    }
+                                                                </span>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -401,9 +476,11 @@ export default function Welcome({ canRegister = true, stats }: Props) {
                                             size="lg"
                                             onClick={loadMore}
                                             disabled={isLoadingMore}
-                                            className="min-w-[200px] border-primary/20 hover:bg-primary/5 hover:text-primary transition-colors"
+                                            className="min-w-[200px] border-primary/20 transition-colors hover:bg-primary/5 hover:text-primary"
                                         >
-                                            {isLoadingMore ? 'Loading...' : `Show More Results (${totalResults - results.length} remaining)`}
+                                            {isLoadingMore
+                                                ? 'Loading...'
+                                                : `Show More Results (${totalResults - results.length} remaining)`}
                                         </Button>
                                     </div>
                                 )}
@@ -417,20 +494,34 @@ export default function Welcome({ canRegister = true, stats }: Props) {
                                 initial="initial"
                                 animate="animate"
                             >
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-32">
+                                <div className="mb-32 grid grid-cols-1 gap-6 md:grid-cols-3">
                                     {[
-                                        { label: "Total Students", value: stats.totalStudents, icon: Users },
-                                        { label: "Feeder Schools", value: stats.feederSchools, icon: GraduationCap },
-                                        { label: "Placement Schools", value: stats.placementSchools, icon: FileSearch }
+                                        {
+                                            label: 'Total Students',
+                                            value: stats.totalStudents,
+                                            icon: Users,
+                                        },
+                                        {
+                                            label: 'Feeder Schools',
+                                            value: stats.feederSchools,
+                                            icon: GraduationCap,
+                                        },
+                                        {
+                                            label: 'Placement Schools',
+                                            value: stats.placementSchools,
+                                            icon: FileSearch,
+                                        },
                                     ].map((stat, i) => (
                                         <motion.div key={i} variants={fadeInUp}>
-                                            <Card className="group relative border-border bg-background dark:bg-muted/10 dark:border-white/10 transition-colors duration-300 hover:border-primary/50">
+                                            <Card className="group relative border-border bg-background transition-colors duration-300 hover:border-primary/50 dark:border-white/10 dark:bg-muted/10">
                                                 <CardContent className="p-6">
-                                                    <div className="flex items-center justify-between mb-4">
-                                                        <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{stat.label}</span>
-                                                        <stat.icon className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                                                    <div className="mb-4 flex items-center justify-between">
+                                                        <span className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
+                                                            {stat.label}
+                                                        </span>
+                                                        <stat.icon className="h-5 w-5 text-muted-foreground transition-colors group-hover:text-primary" />
                                                     </div>
-                                                    <div className="text-4xl font-mono font-bold tracking-tight text-foreground">
+                                                    <div className="font-mono text-4xl font-bold tracking-tight text-foreground">
                                                         {stat.value.toLocaleString()}
                                                     </div>
                                                 </CardContent>
@@ -439,35 +530,52 @@ export default function Welcome({ canRegister = true, stats }: Props) {
                                     ))}
                                 </div>
 
-                                <motion.div variants={fadeInUp} className="max-w-3xl mx-auto">
-                                    <div className="text-center mb-12">
-                                        <h2 className="text-3xl font-bold tracking-tight text-foreground mb-4">Frequently Asked Questions</h2>
+                                <motion.div
+                                    variants={fadeInUp}
+                                    className="mx-auto max-w-3xl"
+                                >
+                                    <div className="mb-12 text-center">
+                                        <h2 className="mb-4 text-3xl font-bold tracking-tight text-foreground">
+                                            Frequently Asked Questions
+                                        </h2>
                                     </div>
 
-                                    <Accordion type="single" collapsible className="w-full space-y-4">
+                                    <Accordion
+                                        type="single"
+                                        collapsible
+                                        className="w-full space-y-4"
+                                    >
                                         {[
                                             {
-                                                question: "How do I search for my child?",
-                                                answer: "Enter your child's full name or student ID in the search box above. Results will appear as you type once you enter at least 2 characters."
+                                                question:
+                                                    'How do I search for my child?',
+                                                answer: "Enter your child's full name or student ID in the search box above. Results will appear as you type once you enter at least 2 characters.",
                                             },
                                             {
-                                                question: "What is the Student ID format?",
-                                                answer: "Student IDs start with the letter \"S\" followed by 9 digits (e.g., S000000001). This ID is unique to each student and can be found on school reports."
+                                                question:
+                                                    'What is the Student ID format?',
+                                                answer: 'Student IDs start with the letter "S" followed by 9 digits (e.g., S000000001). This ID is unique to each student and can be found on school reports.',
                                             },
                                             {
-                                                question: "What if I can't find my child?",
-                                                answer: "Verify the spelling of the name and try different variations. If still not found, please contact your child's feeder school for assistance."
+                                                question:
+                                                    "What if I can't find my child?",
+                                                answer: "Verify the spelling of the name and try different variations. If still not found, please contact your child's feeder school for assistance.",
                                             },
                                             {
-                                                question: "Can I request a placement change?",
-                                                answer: "Placement changes are handled through the Ministry of Education. Contact your local education office for the appeals process."
-                                            }
+                                                question:
+                                                    'Can I request a placement change?',
+                                                answer: 'Placement changes are handled through the Ministry of Education. Contact your local education office for the appeals process.',
+                                            },
                                         ].map((faq, i) => (
-                                            <AccordionItem key={i} value={`item-${i}`} className="border border-border last:border-b dark:border-white/10 dark:bg-muted/10 rounded-lg px-2 bg-background data-[state=open]:border-primary/50 transition-colors">
-                                                <AccordionTrigger className="hover:no-underline px-4 py-5 text-base font-semibold [&[data-state=open]]:text-primary transition-colors">
+                                            <AccordionItem
+                                                key={i}
+                                                value={`item-${i}`}
+                                                className="rounded-lg border border-border bg-background px-2 transition-colors last:border-b data-[state=open]:border-primary/50 dark:border-white/10 dark:bg-muted/10"
+                                            >
+                                                <AccordionTrigger className="px-4 py-5 text-base font-semibold transition-colors hover:no-underline [&[data-state=open]]:text-primary">
                                                     {faq.question}
                                                 </AccordionTrigger>
-                                                <AccordionContent className="text-muted-foreground text-[15px] leading-relaxed px-4 pb-6">
+                                                <AccordionContent className="px-4 pb-6 text-[15px] leading-relaxed text-muted-foreground">
                                                     {faq.answer}
                                                 </AccordionContent>
                                             </AccordionItem>
@@ -479,15 +587,31 @@ export default function Welcome({ canRegister = true, stats }: Props) {
                     </div>
                 </main>
 
-                <footer className="border-t border-border py-10 mt-auto bg-background">
-                    <div className="mx-auto max-w-7xl px-6 flex flex-col items-center justify-between gap-6 sm:flex-row">
+                <footer className="mt-auto border-t border-border bg-background py-10">
+                    <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 px-6 sm:flex-row">
                         <p className="text-sm font-medium text-muted-foreground">
-                            &copy; {new Date().getFullYear()} Year 7 Student Placement System
+                            &copy; {new Date().getFullYear()} Year 7 Student
+                            Placement System
                         </p>
                         <div className="flex items-center gap-8">
-                            <a href="#" className="text-sm font-bold text-muted-foreground hover:text-foreground transition-colors">Privacy Policy</a>
-                            <a href="#" className="text-sm font-bold text-muted-foreground hover:text-foreground transition-colors">Terms of Service</a>
-                            <a href="#" className="text-sm font-bold text-muted-foreground hover:text-foreground transition-colors">Help Centre</a>
+                            <a
+                                href="#"
+                                className="text-sm font-bold text-muted-foreground transition-colors hover:text-foreground"
+                            >
+                                Privacy Policy
+                            </a>
+                            <a
+                                href="#"
+                                className="text-sm font-bold text-muted-foreground transition-colors hover:text-foreground"
+                            >
+                                Terms of Service
+                            </a>
+                            <a
+                                href="#"
+                                className="text-sm font-bold text-muted-foreground transition-colors hover:text-foreground"
+                            >
+                                Help Centre
+                            </a>
                         </div>
                     </div>
                 </footer>
