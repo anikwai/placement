@@ -1,15 +1,15 @@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+
 import { useAppearance } from '@/hooks/use-appearance';
 import { dashboard, login, register } from '@/routes';
 import { type SharedData } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
-import { ArrowUpDown, ChevronRight, FileSearch, GraduationCap, Moon, Search, Sun, Users, X } from 'lucide-react';
+import { FileSearch, GraduationCap, Moon, Search, Sun, Users, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 
@@ -34,7 +34,7 @@ interface Props {
 }
 
 type SortField = 'student_name' | 'national_student_id' | 'feeder_school_name' | 'year_7_placement_school_name';
-type SortOrder = 'asc' | 'desc';
+
 
 export default function Welcome({ canRegister = true, stats }: Props) {
     const { auth } = usePage<SharedData>().props;
@@ -45,8 +45,8 @@ export default function Welcome({ canRegister = true, stats }: Props) {
     const [isLoading, setIsLoading] = useState(false);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [hasSearched, setHasSearched] = useState(false);
-    const [sortField, setSortField] = useState<SortField>('national_student_id');
-    const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+    const [sortField] = useState<SortField>('national_student_id');
+    const [sortDirection] = useState<'asc' | 'desc'>('asc');
     const [nextPageUrl, setNextPageUrl] = useState<string | null>(null);
     const searchInputRef = useRef<HTMLInputElement>(null);
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -69,7 +69,7 @@ export default function Welcome({ canRegister = true, stats }: Props) {
             setTotalResults(data.total);
             setNextPageUrl(data.next_page_url);
             setHasSearched(true);
-        } catch (error) {
+        } catch {
             setResults([]);
             setTotalResults(0);
             setNextPageUrl(null);
@@ -97,7 +97,7 @@ export default function Welcome({ canRegister = true, stats }: Props) {
 
             setResults(prev => [...prev, ...data.data]);
             setNextPageUrl(data.next_page_url);
-        } catch (error) {
+        } catch {
             // Handle error silently or show toast
         } finally {
             setIsLoadingMore(false);
@@ -131,14 +131,7 @@ export default function Welcome({ canRegister = true, stats }: Props) {
         searchInputRef.current?.focus();
     };
 
-    const handleSort = (field: SortField) => {
-        if (sortField === field) {
-            setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-        } else {
-            setSortField(field);
-            setSortDirection('asc');
-        }
-    };
+
 
     const sortedResults = [...results].sort((a, b) => {
         const aValue = String(a[sortField]).toLowerCase();
@@ -161,16 +154,7 @@ export default function Welcome({ canRegister = true, stats }: Props) {
         };
     }, []);
 
-    const SortableHeader = ({ field, children }: { field: SortField; children: React.ReactNode }) => (
-        <Button
-            variant="ghost"
-            onClick={() => handleSort(field)}
-            className="-ml-3 h-8 hover:bg-muted font-medium text-xs uppercase tracking-wider text-muted-foreground"
-        >
-            {children}
-            <ArrowUpDown className={`ml-2 h-3 w-3 ${sortField === field ? 'text-foreground' : 'text-muted-foreground/30'}`} />
-        </Button>
-    );
+
 
     // Animation variants
     const fadeInUp = {
