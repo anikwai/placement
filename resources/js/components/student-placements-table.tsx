@@ -17,6 +17,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
     Table,
     TableBody,
@@ -71,6 +72,7 @@ export interface StudentPlacementsTableProps {
         placement_schools: number;
     };
     academicYears: number[];
+    isLoading?: boolean;
 }
 
 export default function StudentPlacementsTable({
@@ -78,6 +80,7 @@ export default function StudentPlacementsTable({
     filters,
     stats,
     academicYears,
+    isLoading = false,
 }: StudentPlacementsTableProps) {
     const [search, setSearch] = useState(filters.search);
     const [academicYear, setAcademicYear] = useState(filters.academic_year);
@@ -158,8 +161,15 @@ export default function StudentPlacementsTable({
                 <div>
                     <CardTitle>Placements</CardTitle>
                     <CardDescription>
-                        {placements.total.toLocaleString()} students across{' '}
-                        {stats.feeder_schools.toLocaleString()} feeder schools
+                        {isLoading ? (
+                            <Skeleton className="h-4 w-64" />
+                        ) : (
+                            <>
+                                {placements.total.toLocaleString()} students
+                                across {stats.feeder_schools.toLocaleString()}{' '}
+                                feeder schools
+                            </>
+                        )}
                     </CardDescription>
                 </div>
                 <CardAction>
@@ -249,7 +259,33 @@ export default function StudentPlacementsTable({
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {placements.data.length === 0 ? (
+                        {isLoading ? (
+                            Array.from({ length: 8 }).map((_, index) => (
+                                <TableRow
+                                    key={index}
+                                    className="odd:bg-muted/15"
+                                >
+                                    <TableCell className="px-6">
+                                        <div className="flex flex-col gap-2">
+                                            <Skeleton className="h-4 w-40" />
+                                            <Skeleton className="h-3 w-24" />
+                                        </div>
+                                    </TableCell>
+                                    <TableCell className="px-6">
+                                        <Skeleton className="h-6 w-16" />
+                                    </TableCell>
+                                    <TableCell className="px-6">
+                                        <Skeleton className="h-4 w-40" />
+                                    </TableCell>
+                                    <TableCell className="px-6">
+                                        <Skeleton className="h-4 w-40" />
+                                    </TableCell>
+                                    <TableCell className="px-6">
+                                        <Skeleton className="h-4 w-12" />
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        ) : placements.data.length === 0 ? (
                             <TableRow className="hover:bg-transparent">
                                 <TableCell colSpan={5} className="px-6 py-12">
                                     <div className="flex flex-col items-center gap-2 text-center">
