@@ -21,6 +21,7 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from '@/components/ui/popover';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
     Table,
     TableBody,
@@ -36,7 +37,7 @@ import { type BreadcrumbItem, type SharedData } from '@/types';
 import { Head, router, usePage } from '@inertiajs/react';
 import { format, parseISO } from 'date-fns';
 import { CalendarDays, Download } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { type DateRange } from 'react-day-picker';
 import {
     Bar,
@@ -65,12 +66,12 @@ interface SchoolData {
 }
 
 interface Props {
-    stats: Stats;
-    topFeederSchools: SchoolData[];
-    topPlacementSchools: SchoolData[];
-    placements: StudentPlacementsTableProps['placements'];
+    stats?: Stats;
+    topFeederSchools?: SchoolData[];
+    topPlacementSchools?: SchoolData[];
+    placements?: StudentPlacementsTableProps['placements'];
     placementFilters: StudentPlacementsTableProps['filters'];
-    placementStats: StudentPlacementsTableProps['stats'];
+    placementStats?: StudentPlacementsTableProps['stats'];
     academicYears: StudentPlacementsTableProps['academicYears'];
     dateRangeBounds: { from: string | null; to: string | null };
 }
@@ -108,25 +109,130 @@ export default function Dashboard({
         return 'Good evening';
     })();
 
-    const genderData = [
-        {
-            name: 'male',
-            label: 'Male',
-            value: stats.maleCount,
-            fill: 'var(--color-chart-1)',
-        },
-        {
-            name: 'female',
-            label: 'Female',
-            value: stats.femaleCount,
-            fill: 'var(--color-chart-2)',
-        },
-    ];
+    const safeStats: Stats = stats ?? {
+        totalStudents: 0,
+        feederSchools: 0,
+        placementSchools: 0,
+        maleCount: 0,
+        femaleCount: 0,
+    };
+
+    const safeTopFeederSchools = topFeederSchools ?? [];
+    const safeTopPlacementSchools = topPlacementSchools ?? [];
+    const safePlacementStats = placementStats ?? {
+        total_students: 0,
+        feeder_schools: 0,
+        placement_schools: 0,
+    };
+    const safePlacements =
+        placements ??
+        ({
+            data: [],
+            current_page: 1,
+            last_page: 1,
+            per_page: placementFilters.per_page,
+            total: 0,
+            from: 0,
+            to: 0,
+            links: [],
+        } as StudentPlacementsTableProps['placements']);
+
+    const isDeferredLoading =
+        !stats ||
+        !topFeederSchools ||
+        !topPlacementSchools ||
+        !placements ||
+        !placementStats;
 
     const [datePopoverOpen, setDatePopoverOpen] = useState(false);
     const [topPlacementView, setTopPlacementView] = useState<'graph' | 'table'>(
         'graph',
     );
+    const [isRefreshing, setIsRefreshing] = useState(false);
+    const refreshShowTimeoutRef = useRef<number | null>(null);
+    const refreshHideTimeoutRef = useRef<number | null>(null);
+    const refreshStartedAtRef = useRef<number | null>(null);
+    const isLoading = isRefreshing || isDeferredLoading;
+
+    const malePercent = safeStats.totalStudents
+        ? (safeStats.maleCount / safeStats.totalStudents) * 100
+        : 0;
+    const femalePercent = safeStats.totalStudents
+        ? (safeStats.femaleCount / safeStats.totalStudents) * 100
+        : 0;
+
+    const genderData = [
+        {
+            name: 'male',
+            label: 'Male',
+            value: safeStats.maleCount,
+            fill: 'var(--color-chart-1)',
+        },
+        {
+            name: 'female',
+            label: 'Female',
+            value: safeStats.femaleCount,
+            fill: 'var(--color-chart-2)',
+        },
+    ];
+
+    useEffect(() => {
+        const removeStartListener = router.on('start', () => {
+            if (refreshShowTimeoutRef.current) {
+                window.clearTimeout(refreshShowTimeoutRef.current);
+                refreshShowTimeoutRef.current = null;
+            }
+
+            if (refreshHideTimeoutRef.current) {
+                window.clearTimeout(refreshHideTimeoutRef.current);
+                refreshHideTimeoutRef.current = null;
+            }
+
+            refreshStartedAtRef.current = Date.now();
+            setIsRefreshing(true);
+        });
+
+        const removeFinishListener = router.on('finish', () => {
+            if (refreshShowTimeoutRef.current) {
+                window.clearTimeout(refreshShowTimeoutRef.current);
+                refreshShowTimeoutRef.current = null;
+            }
+
+            const minVisibleMs = 250;
+            const startedAt = refreshStartedAtRef.current ?? Date.now();
+            const elapsed = Date.now() - startedAt;
+            const remaining = Math.max(0, minVisibleMs - elapsed);
+
+            refreshStartedAtRef.current = null;
+
+            if (remaining === 0) {
+                setIsRefreshing(false);
+                return;
+            }
+
+            refreshHideTimeoutRef.current = window.setTimeout(() => {
+                refreshHideTimeoutRef.current = null;
+                setIsRefreshing(false);
+            }, remaining);
+        });
+
+        return () => {
+            removeStartListener();
+            removeFinishListener();
+
+            if (refreshShowTimeoutRef.current) {
+                window.clearTimeout(refreshShowTimeoutRef.current);
+                refreshShowTimeoutRef.current = null;
+            }
+
+            if (refreshHideTimeoutRef.current) {
+                window.clearTimeout(refreshHideTimeoutRef.current);
+                refreshHideTimeoutRef.current = null;
+            }
+
+            refreshStartedAtRef.current = null;
+        };
+    }, []);
 
     const initialDateRange = useMemo<DateRange | undefined>(() => {
         const fromString = placementFilters.from || dateRangeBounds.from;
@@ -367,14 +473,30 @@ export default function Dashboard({
                                         : 'p-0'
                                 }
                             >
-                                {topPlacementView === 'graph' ? (
+                                {isLoading ? (
+                                    <div className="p-6">
+                                        <div className="flex h-[350px] items-end justify-between gap-4">
+                                            {Array.from({ length: 5 }).map(
+                                                (_, index) => (
+                                                    <Skeleton
+                                                        key={index}
+                                                        className="w-12"
+                                                        style={{
+                                                            height: `${180 + index * 30}px`,
+                                                        }}
+                                                    />
+                                                ),
+                                            )}
+                                        </div>
+                                    </div>
+                                ) : topPlacementView === 'graph' ? (
                                     <ChartContainer
                                         config={chartConfig}
                                         className="max-h-[350px] w-full"
                                     >
                                         <BarChart
                                             accessibilityLayer
-                                            data={topPlacementSchools}
+                                            data={safeTopPlacementSchools}
                                             margin={{
                                                 left: 20,
                                                 right: 20,
@@ -469,7 +591,7 @@ export default function Dashboard({
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
-                                            {topPlacementSchools.map(
+                                            {safeTopPlacementSchools.map(
                                                 (school, index) => (
                                                     <TableRow
                                                         key={`${school.year_7_placement_school_name ?? 'unknown'}-${index}`}
@@ -504,7 +626,11 @@ export default function Dashboard({
                                 </CardHeader>
                                 <CardContent>
                                     <div className="text-3xl font-bold tracking-tight text-foreground">
-                                        {stats.totalStudents.toLocaleString()}
+                                        {isLoading ? (
+                                            <Skeleton className="h-9 w-20" />
+                                        ) : (
+                                            safeStats.totalStudents.toLocaleString()
+                                        )}
                                     </div>
                                     <div className="mt-2 flex items-center text-xs font-medium text-emerald-500">
                                         <span className="mr-2 rounded bg-emerald-500/10 px-1 py-0.5">
@@ -525,7 +651,11 @@ export default function Dashboard({
                                 </CardHeader>
                                 <CardContent>
                                     <div className="text-3xl font-bold tracking-tight text-foreground">
-                                        {stats.feederSchools.toLocaleString()}
+                                        {isLoading ? (
+                                            <Skeleton className="h-9 w-16" />
+                                        ) : (
+                                            safeStats.feederSchools.toLocaleString()
+                                        )}
                                     </div>
                                     <div className="mt-2 flex items-center text-xs font-medium text-emerald-500">
                                         <span className="mr-2 rounded bg-emerald-500/10 px-1 py-0.5">
@@ -546,7 +676,11 @@ export default function Dashboard({
                                 </CardHeader>
                                 <CardContent>
                                     <div className="text-3xl font-bold tracking-tight text-foreground">
-                                        {stats.placementSchools.toLocaleString()}
+                                        {isLoading ? (
+                                            <Skeleton className="h-9 w-16" />
+                                        ) : (
+                                            safeStats.placementSchools.toLocaleString()
+                                        )}
                                     </div>
                                     <div className="mt-2 flex items-center text-xs font-medium text-rose-500">
                                         <span className="mr-2 rounded bg-rose-500/10 px-1 py-0.5">
@@ -567,12 +701,11 @@ export default function Dashboard({
                                 </CardHeader>
                                 <CardContent>
                                     <div className="text-3xl font-bold tracking-tight text-foreground">
-                                        {(
-                                            (stats.maleCount /
-                                                stats.totalStudents) *
-                                            100
-                                        ).toFixed(0)}
-                                        %
+                                        {isLoading ? (
+                                            <Skeleton className="h-9 w-16" />
+                                        ) : (
+                                            <>{malePercent.toFixed(0)}%</>
+                                        )}
                                     </div>
                                     <div className="mt-2 flex items-center text-xs font-medium text-blue-500">
                                         <span className="mr-2 rounded bg-blue-500/10 px-1 py-0.5">
@@ -617,44 +750,69 @@ export default function Dashboard({
                                     <span>Students</span>
                                 </div>
                                 <div className="px-2">
-                                    {topFeederSchools.map((school, index) => (
-                                        <div
-                                            key={index}
-                                            className="group flex cursor-default items-center justify-between rounded-lg px-4 py-3 transition-colors hover:bg-muted/30"
-                                        >
-                                            <div className="flex items-center gap-4">
-                                                <div className="relative flex h-10 w-10 items-center justify-center rounded-lg border border-border/50 bg-muted/50 font-bold text-foreground shadow-sm transition-all group-hover:border-primary/50 group-hover:bg-primary group-hover:text-primary-foreground">
-                                                    {index + 1}
-                                                    {index < 3 && (
-                                                        <div className="absolute -top-1 -right-1 h-2 w-2 animate-pulse rounded-full bg-primary" />
-                                                    )}
-                                                </div>
-                                                <div className="flex flex-col gap-0.5">
-                                                    <span
-                                                        className="max-w-[200px] truncate text-sm font-semibold text-foreground sm:max-w-[300px]"
-                                                        title={
-                                                            school.feeder_school_name
-                                                        }
-                                                    >
-                                                        {
-                                                            school.feeder_school_name
-                                                        }
-                                                    </span>
-                                                    <span className="text-[10px] text-muted-foreground">
-                                                        Primary School
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <div className="text-sm font-bold text-foreground">
-                                                    {school.student_count}
-                                                </div>
-                                                <div className="hidden rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground sm:block">
-                                                    Students
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
+                                    {isLoading
+                                        ? Array.from({ length: 5 }).map(
+                                              (_, index) => (
+                                                  <div
+                                                      key={index}
+                                                      className="flex items-center justify-between rounded-lg px-4 py-3"
+                                                  >
+                                                      <div className="flex items-center gap-4">
+                                                          <Skeleton className="h-10 w-10 rounded-lg" />
+                                                          <div className="flex flex-col gap-2">
+                                                              <Skeleton className="h-4 w-52" />
+                                                              <Skeleton className="h-3 w-24" />
+                                                          </div>
+                                                      </div>
+                                                      <div className="flex items-center gap-2">
+                                                          <Skeleton className="h-4 w-10" />
+                                                          <Skeleton className="hidden h-6 w-16 sm:block" />
+                                                      </div>
+                                                  </div>
+                                              ),
+                                          )
+                                        : safeTopFeederSchools.map(
+                                              (school, index) => (
+                                                  <div
+                                                      key={index}
+                                                      className="group flex cursor-default items-center justify-between rounded-lg px-4 py-3 transition-colors hover:bg-muted/30"
+                                                  >
+                                                      <div className="flex items-center gap-4">
+                                                          <div className="relative flex h-10 w-10 items-center justify-center rounded-lg border border-border/50 bg-muted/50 font-bold text-foreground shadow-sm transition-all group-hover:border-primary/50 group-hover:bg-primary group-hover:text-primary-foreground">
+                                                              {index + 1}
+                                                              {index < 3 && (
+                                                                  <div className="absolute -top-1 -right-1 h-2 w-2 animate-pulse rounded-full bg-primary" />
+                                                              )}
+                                                          </div>
+                                                          <div className="flex flex-col gap-0.5">
+                                                              <span
+                                                                  className="max-w-[200px] truncate text-sm font-semibold text-foreground sm:max-w-[300px]"
+                                                                  title={
+                                                                      school.feeder_school_name
+                                                                  }
+                                                              >
+                                                                  {
+                                                                      school.feeder_school_name
+                                                                  }
+                                                              </span>
+                                                              <span className="text-[10px] text-muted-foreground">
+                                                                  Primary School
+                                                              </span>
+                                                          </div>
+                                                      </div>
+                                                      <div className="flex items-center gap-2">
+                                                          <div className="text-sm font-bold text-foreground">
+                                                              {
+                                                                  school.student_count
+                                                              }
+                                                          </div>
+                                                          <div className="hidden rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground sm:block">
+                                                              Students
+                                                          </div>
+                                                      </div>
+                                                  </div>
+                                              ),
+                                          )}
                                 </div>
                             </CardContent>
                         </Card>
@@ -667,81 +825,91 @@ export default function Dashboard({
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="flex flex-col items-center justify-center p-4">
-                                <ChartContainer
-                                    config={chartConfig}
-                                    className="h-[200px] w-full"
-                                >
-                                    <PieChart>
-                                        <ChartTooltip
-                                            cursor={false}
-                                            content={
-                                                <ChartTooltipContent
-                                                    hideLabel
+                                {isLoading ? (
+                                    <div className="flex h-[200px] w-full items-center justify-center">
+                                        <Skeleton className="h-44 w-44 rounded-full" />
+                                    </div>
+                                ) : (
+                                    <ChartContainer
+                                        config={chartConfig}
+                                        className="h-[200px] w-full"
+                                    >
+                                        <PieChart>
+                                            <ChartTooltip
+                                                cursor={false}
+                                                content={
+                                                    <ChartTooltipContent
+                                                        hideLabel
+                                                    />
+                                                }
+                                            />
+                                            <Pie
+                                                data={genderData}
+                                                dataKey="value"
+                                                nameKey="name"
+                                                innerRadius={65}
+                                                outerRadius={85}
+                                                strokeWidth={0}
+                                            >
+                                                <Cell
+                                                    key="male"
+                                                    fill="var(--color-chart-1)"
                                                 />
-                                            }
-                                        />
-                                        <Pie
-                                            data={genderData}
-                                            dataKey="value"
-                                            nameKey="name"
-                                            innerRadius={65}
-                                            outerRadius={85}
-                                            strokeWidth={0}
-                                        >
-                                            <Cell
-                                                key="male"
-                                                fill="var(--color-chart-1)"
-                                            />
-                                            <Cell
-                                                key="female"
-                                                fill="var(--color-chart-2)"
-                                            />
-                                            <Label
-                                                content={({ viewBox }) => {
-                                                    if (
-                                                        viewBox &&
-                                                        'cx' in viewBox &&
-                                                        'cy' in viewBox
-                                                    ) {
-                                                        return (
-                                                            <text
-                                                                x={viewBox.cx}
-                                                                y={viewBox.cy}
-                                                                textAnchor="middle"
-                                                                dominantBaseline="middle"
-                                                            >
-                                                                <tspan
+                                                <Cell
+                                                    key="female"
+                                                    fill="var(--color-chart-2)"
+                                                />
+                                                <Label
+                                                    content={({ viewBox }) => {
+                                                        if (
+                                                            viewBox &&
+                                                            'cx' in viewBox &&
+                                                            'cy' in viewBox
+                                                        ) {
+                                                            return (
+                                                                <text
                                                                     x={
                                                                         viewBox.cx
                                                                     }
                                                                     y={
                                                                         viewBox.cy
                                                                     }
-                                                                    className="fill-foreground text-3xl font-bold"
+                                                                    textAnchor="middle"
+                                                                    dominantBaseline="middle"
                                                                 >
-                                                                    {stats.totalStudents.toLocaleString()}
-                                                                </tspan>
-                                                                <tspan
-                                                                    x={
-                                                                        viewBox.cx
-                                                                    }
-                                                                    y={
-                                                                        (viewBox.cy ||
-                                                                            0) +
-                                                                        24
-                                                                    }
-                                                                    className="fill-muted-foreground text-xs"
-                                                                >
-                                                                    TOTAL
-                                                                </tspan>
-                                                            </text>
-                                                        );
-                                                    }
-                                                }}
-                                            />
-                                        </Pie>
-                                    </PieChart>
-                                </ChartContainer>
+                                                                    <tspan
+                                                                        x={
+                                                                            viewBox.cx
+                                                                        }
+                                                                        y={
+                                                                            viewBox.cy
+                                                                        }
+                                                                        className="fill-foreground text-3xl font-bold"
+                                                                    >
+                                                                        {safeStats.totalStudents.toLocaleString()}
+                                                                    </tspan>
+                                                                    <tspan
+                                                                        x={
+                                                                            viewBox.cx
+                                                                        }
+                                                                        y={
+                                                                            (viewBox.cy ||
+                                                                                0) +
+                                                                            24
+                                                                        }
+                                                                        className="fill-muted-foreground text-xs"
+                                                                    >
+                                                                        TOTAL
+                                                                    </tspan>
+                                                                </text>
+                                                            );
+                                                        }
+                                                    }}
+                                                />
+                                            </Pie>
+                                        </PieChart>
+                                    </ChartContainer>
+                                )}
                                 <div className="mt-2 grid w-full grid-cols-2 gap-3">
                                     <div className="flex flex-col items-center rounded-xl border border-border/50 bg-muted/30 p-3">
                                         <div className="mb-2 flex items-center gap-2">
@@ -750,17 +918,21 @@ export default function Dashboard({
                                                 Male
                                             </span>
                                         </div>
-                                        <span className="text-xl font-bold text-foreground">
-                                            {stats.maleCount}
-                                        </span>
-                                        <span className="text-[10px] text-muted-foreground">
-                                            {(
-                                                (stats.maleCount /
-                                                    stats.totalStudents) *
-                                                100
-                                            ).toFixed(0)}
-                                            %
-                                        </span>
+                                        {isLoading ? (
+                                            <>
+                                                <Skeleton className="h-6 w-16" />
+                                                <Skeleton className="mt-1 h-3 w-10" />
+                                            </>
+                                        ) : (
+                                            <>
+                                                <span className="text-xl font-bold text-foreground">
+                                                    {safeStats.maleCount}
+                                                </span>
+                                                <span className="text-[10px] text-muted-foreground">
+                                                    {malePercent.toFixed(0)}%
+                                                </span>
+                                            </>
+                                        )}
                                     </div>
                                     <div className="flex flex-col items-center rounded-xl border border-border/50 bg-muted/30 p-3">
                                         <div className="mb-2 flex items-center gap-2">
@@ -769,17 +941,21 @@ export default function Dashboard({
                                                 Female
                                             </span>
                                         </div>
-                                        <span className="text-xl font-bold text-foreground">
-                                            {stats.femaleCount}
-                                        </span>
-                                        <span className="text-[10px] text-muted-foreground">
-                                            {(
-                                                (stats.femaleCount /
-                                                    stats.totalStudents) *
-                                                100
-                                            ).toFixed(0)}
-                                            %
-                                        </span>
+                                        {isLoading ? (
+                                            <>
+                                                <Skeleton className="h-6 w-16" />
+                                                <Skeleton className="mt-1 h-3 w-10" />
+                                            </>
+                                        ) : (
+                                            <>
+                                                <span className="text-xl font-bold text-foreground">
+                                                    {safeStats.femaleCount}
+                                                </span>
+                                                <span className="text-[10px] text-muted-foreground">
+                                                    {femalePercent.toFixed(0)}%
+                                                </span>
+                                            </>
+                                        )}
                                     </div>
                                 </div>
                             </CardContent>
@@ -793,10 +969,11 @@ export default function Dashboard({
                             placementFilters.from,
                             placementFilters.to,
                         ].join('|')}
-                        placements={placements}
+                        placements={safePlacements}
                         filters={placementFilters}
-                        stats={placementStats}
+                        stats={safePlacementStats}
                         academicYears={academicYears}
+                        isLoading={isLoading}
                     />
                 </div>
             </div>
