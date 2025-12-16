@@ -27,9 +27,10 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { dashboard } from '@/routes';
-import { router } from '@inertiajs/react';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { Link, router } from '@inertiajs/react';
 import debounce from 'lodash/debounce';
-import { Search, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 interface StudentPlacementRow {
@@ -82,6 +83,7 @@ export default function StudentPlacementsTable({
     academicYears,
     isLoading = false,
 }: StudentPlacementsTableProps) {
+    const isMobile = useIsMobile();
     const [search, setSearch] = useState(filters.search);
     const [academicYear, setAcademicYear] = useState(filters.academic_year);
     const dashboardUrl = dashboard().url;
@@ -149,11 +151,48 @@ export default function StudentPlacementsTable({
         );
     };
 
-    const handlePageChange = (url: string | null) => {
-        if (url) {
-            router.get(url, {}, { preserveState: true, preserveScroll: true });
+    const paginationLinks = useMemo(() => {
+        if (!isMobile) {
+            return placements.links;
         }
-    };
+
+        const lastPage = placements.last_page;
+        const currentPage = placements.current_page;
+        const visiblePages = new Set<number>([
+            1,
+            lastPage,
+            currentPage,
+            Math.max(1, currentPage - 1),
+            Math.min(lastPage, currentPage + 1),
+        ]);
+
+        return placements.links.filter((link) => {
+            if (
+                link.label.includes('Previous') ||
+                link.label.includes('Next')
+            ) {
+                return true;
+            }
+
+            if (link.label === '...') {
+                return false;
+            }
+
+            const numeric = Number(link.label);
+            if (!Number.isNaN(numeric)) {
+                return visiblePages.has(numeric);
+            }
+
+            return false;
+        });
+    }, [
+        isMobile,
+        placements.current_page,
+        placements.last_page,
+        placements.links,
+    ]);
+
+    const paginationPrefetch = 'click';
 
     return (
         <Card className="overflow-hidden bg-card/70 backdrop-blur supports-[backdrop-filter]:bg-card/70">
@@ -397,18 +436,114 @@ export default function StudentPlacementsTable({
                         Showing {placements.from} to {placements.to} of{' '}
                         {placements.total.toLocaleString()} results
                     </div>
-                    <div className="flex items-center gap-1">
-                        {placements.links.map((link, idx) => (
-                            <Button
-                                key={idx}
-                                variant={link.active ? 'default' : 'outline'}
-                                size="sm"
-                                disabled={!link.url}
-                                onClick={() => handlePageChange(link.url)}
-                                dangerouslySetInnerHTML={{ __html: link.label }}
-                                className="min-w-[2.5rem]"
-                            />
-                        ))}
+                    <div className="flex max-w-full flex-wrap items-center justify-center gap-1 sm:flex-nowrap sm:justify-end">
+                        {paginationLinks.map((link, idx) => {
+                            const isPrevious = link.label.includes('Previous');
+                            const isNext = link.label.includes('Next');
+                            const isEllipsis = link.label === '...';
+                            const href = link.url;
+
+                            if (isPrevious || isNext) {
+                                const contents = (
+                                    <>
+                                        {isPrevious ? (
+                                            <ChevronLeft className="h-4 w-4" />
+                                        ) : (
+                                            <ChevronRight className="h-4 w-4" />
+                                        )}
+                                        <span className="hidden sm:inline">
+                                            {isPrevious ? 'Prev' : 'Next'}
+                                        </span>
+                                    </>
+                                );
+
+                                return href ? (
+                                    <Button
+                                        key={idx}
+                                        asChild
+                                        variant="outline"
+                                        size="sm"
+                                        className="min-w-[2.25rem] px-2 sm:min-w-[2.5rem] sm:px-3"
+                                        aria-label={
+                                            isPrevious
+                                                ? 'Previous page'
+                                                : 'Next page'
+                                        }
+                                    >
+                                        <Link
+                                            href={href}
+                                            replace
+                                            preserveScroll
+                                            preserveState
+                                            only={['placements']}
+                                            prefetch={paginationPrefetch}
+                                        >
+                                            {contents}
+                                        </Link>
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        key={idx}
+                                        variant="outline"
+                                        size="sm"
+                                        disabled
+                                        className="min-w-[2.25rem] px-2 sm:min-w-[2.5rem] sm:px-3"
+                                        aria-label={
+                                            isPrevious
+                                                ? 'Previous page'
+                                                : 'Next page'
+                                        }
+                                    >
+                                        {contents}
+                                    </Button>
+                                );
+                            }
+
+                            if (isEllipsis) {
+                                return (
+                                    <Button
+                                        key={idx}
+                                        variant="outline"
+                                        size="sm"
+                                        disabled
+                                        className="min-w-[2.25rem] px-2 sm:min-w-[2.5rem] sm:px-3"
+                                    >
+                                        …
+                                    </Button>
+                                );
+                            }
+
+                            return href ? (
+                                <Button
+                                    key={idx}
+                                    asChild
+                                    variant={link.active ? 'default' : 'outline'}
+                                    size="sm"
+                                    className="min-w-[2.25rem] px-2 sm:min-w-[2.5rem] sm:px-3"
+                                >
+                                    <Link
+                                        href={href}
+                                        replace
+                                        preserveScroll
+                                        preserveState
+                                        only={['placements']}
+                                        prefetch={paginationPrefetch}
+                                    >
+                                        {link.label}
+                                    </Link>
+                                </Button>
+                            ) : (
+                                <Button
+                                    key={idx}
+                                    variant={link.active ? 'default' : 'outline'}
+                                    size="sm"
+                                    disabled
+                                    className="min-w-[2.25rem] px-2 sm:min-w-[2.5rem] sm:px-3"
+                                >
+                                    {link.label}
+                                </Button>
+                            );
+                        })}
                     </div>
                 </CardFooter>
             )}
