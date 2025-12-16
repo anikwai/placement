@@ -756,88 +756,92 @@ export default function Dashboard({
                                     <div className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                                         Total Students
                                     </div>
-                                    <div className="mt-2 text-3xl font-bold tracking-tight text-foreground">
-                                        {isLoading ? (
-                                            <Skeleton className="h-9 w-20" />
-                                        ) : (
-                                            safeStats.totalStudents.toLocaleString()
-                                        )}
-                                    </div>
-                                    <div className="mt-2 flex items-center text-xs font-medium text-emerald-500">
-                                        <span className="mr-2 rounded bg-emerald-500/10 px-1 py-0.5">
-                                            ↑ 3.6%
-                                        </span>
-                                        <span className="text-muted-foreground/70">
-                                            vs last year
-                                        </span>
-                                    </div>
-                                </div>
+	                                    <div className="mt-2 text-3xl font-bold tracking-tight text-foreground">
+	                                        {isLoading ? (
+	                                            <Skeleton className="h-9 w-20" />
+	                                        ) : (
+	                                            safeStats.totalStudents.toLocaleString()
+	                                        )}
+	                                    </div>
+	                                </div>
 
                                 <div className="rounded-lg border border-border/40 bg-muted/20 p-4">
                                     <div className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                                         Feeder Schools
                                     </div>
-                                    <div className="mt-2 text-3xl font-bold tracking-tight text-foreground">
-                                        {isLoading ? (
-                                            <Skeleton className="h-9 w-16" />
-                                        ) : (
-                                            safeStats.feederSchools.toLocaleString()
-                                        )}
-                                    </div>
-                                    <div className="mt-2 flex items-center text-xs font-medium text-emerald-500">
-                                        <span className="mr-2 rounded bg-emerald-500/10 px-1 py-0.5">
-                                            ↑ 2.5%
-                                        </span>
-                                        <span className="text-muted-foreground/70">
-                                            vs last year
-                                        </span>
-                                    </div>
-                                </div>
+	                                    <div className="mt-2 text-3xl font-bold tracking-tight text-foreground">
+	                                        {isLoading ? (
+	                                            <Skeleton className="h-9 w-16" />
+	                                        ) : (
+	                                            safeStats.feederSchools.toLocaleString()
+	                                        )}
+	                                    </div>
+	                                </div>
 
                                 <div className="rounded-lg border border-border/40 bg-muted/20 p-4">
                                     <div className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                                         Placement Schools
                                     </div>
-                                    <div className="mt-2 text-3xl font-bold tracking-tight text-foreground">
-                                        {isLoading ? (
-                                            <Skeleton className="h-9 w-16" />
-                                        ) : (
-                                            safeStats.placementSchools.toLocaleString()
-                                        )}
-                                    </div>
-                                    <div className="mt-2 flex items-center text-xs font-medium text-rose-500">
-                                        <span className="mr-2 rounded bg-rose-500/10 px-1 py-0.5">
-                                            ↓ 5.0%
-                                        </span>
-                                        <span className="text-muted-foreground/70">
-                                            vs last year
-                                        </span>
-                                    </div>
-                                </div>
+	                                    <div className="mt-2 text-3xl font-bold tracking-tight text-foreground">
+	                                        {isLoading ? (
+	                                            <Skeleton className="h-9 w-16" />
+	                                        ) : (
+	                                            safeStats.placementSchools.toLocaleString()
+	                                        )}
+	                                    </div>
+	                                </div>
 
-                                <div className="rounded-lg border border-border/40 bg-muted/20 p-4">
-                                    <div className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
-                                        Male %
-                                    </div>
-                                    <div className="mt-2 text-3xl font-bold tracking-tight text-foreground">
-                                        {isLoading ? (
-                                            <Skeleton className="h-9 w-16" />
-                                        ) : (
-                                            <>{malePercent.toFixed(0)}%</>
-                                        )}
-                                    </div>
-                                    <div className="mt-2 flex items-center text-xs font-medium text-blue-500">
-                                        <span className="mr-2 rounded bg-blue-500/10 px-1 py-0.5">
-                                            Stable
-                                        </span>
-                                        <span className="text-muted-foreground/70">
-                                            Distribution
-                                        </span>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </div>
+		                                <div className="rounded-lg border border-border/40 bg-muted/20 p-4">
+		                                    <div className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+		                                        Gender Distribution
+		                                    </div>
+		                                    <div className="mt-3 grid grid-cols-2 gap-3">
+		                                        <div className="min-w-0 rounded-md border border-border/40 bg-background/20 p-3">
+		                                            <div className="flex flex-col gap-1">
+		                                                <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+		                                                    <div className="h-2 w-2 rounded-full bg-chart-1" />
+		                                                    <span>Male</span>
+		                                                </div>
+		                                                <div className="text-2xl font-bold tabular-nums tracking-tight text-foreground">
+		                                                    {isLoading ? (
+		                                                        <Skeleton className="h-7 w-14" />
+		                                                    ) : (
+		                                                        <>
+		                                                            {malePercent.toFixed(
+		                                                                0,
+		                                                            )}
+		                                                            %
+		                                                        </>
+		                                                    )}
+		                                                </div>
+		                                            </div>
+		                                        </div>
+
+		                                        <div className="min-w-0 rounded-md border border-border/40 bg-background/20 p-3">
+		                                            <div className="flex flex-col gap-1">
+		                                                <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+		                                                    <div className="h-2 w-2 rounded-full bg-chart-2" />
+		                                                    <span>Female</span>
+		                                                </div>
+		                                                <div className="text-2xl font-bold tabular-nums tracking-tight text-foreground">
+		                                                    {isLoading ? (
+		                                                        <Skeleton className="h-7 w-14" />
+		                                                    ) : (
+		                                                        <>
+		                                                            {femalePercent.toFixed(
+		                                                                0,
+		                                                            )}
+		                                                            %
+		                                                        </>
+		                                                    )}
+		                                                </div>
+		                                            </div>
+		                                        </div>
+		                                    </div>
+		                                </div>
+		                            </CardContent>
+		                        </Card>
+		                    </div>
 
                     {/* Bottom Row: Feeder List + Gender Donut */}
                     <div className="grid gap-4 lg:grid-cols-3">
