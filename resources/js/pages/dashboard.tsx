@@ -244,9 +244,12 @@ export default function Dashboard({
         number | null
     >(null);
     const [isRefreshing, setIsRefreshing] = useState(false);
+    const isRefreshingRef = useRef(false);
     const refreshShowTimeoutRef = useRef<number | null>(null);
     const refreshHideTimeoutRef = useRef<number | null>(null);
     const refreshStartedAtRef = useRef<number | null>(null);
+    const pendingRefreshUrlRef = useRef<string | null>(null);
+    const prefetchingUrlsRef = useRef<Set<string>>(new Set());
     const isLoading = isRefreshing || isDeferredLoading;
     const highlightedTopPlacementIndex = activeTopPlacementIndex ?? 0;
 
@@ -273,7 +276,173 @@ export default function Dashboard({
     ];
 
     useEffect(() => {
-        const removeStartListener = router.on('start', () => {
+        isRefreshingRef.current = isRefreshing;
+    }, [isRefreshing]);
+
+	    useEffect(() => {
+	        const normalizeUrl = (url: string): string => {
+	            if (typeof window === 'undefined') {
+	                return url;
+	            }
+
+            try {
+                const parsed = new URL(url, window.location.origin);
+                return `${parsed.pathname}${parsed.search}`;
+            } catch {
+                return url;
+	            }
+	        };
+
+	        const urlFromEvent = (event: unknown): string | null => {
+	            if (typeof event !== 'object' || event === null) {
+	                return null;
+	            }
+
+	            const detail =
+	                'detail' in event && typeof event.detail === 'object'
+	                    ? event.detail
+	                    : null;
+
+	            if (!detail) {
+	                return null;
+	            }
+
+	            const pageUrl =
+	                'page' in detail &&
+	                typeof detail.page === 'object' &&
+	                detail.page !== null &&
+	                'url' in detail.page &&
+	                typeof detail.page.url === 'string'
+	                    ? detail.page.url
+	                    : null;
+
+	            const visitUrl =
+	                'visit' in detail &&
+	                typeof detail.visit === 'object' &&
+	                detail.visit !== null &&
+	                'url' in detail.visit &&
+	                typeof detail.visit.url === 'string'
+	                    ? detail.visit.url
+	                    : null;
+
+	            const url = pageUrl ?? visitUrl;
+
+	            if (!url) {
+	                return null;
+	            }
+
+	            return normalizeUrl(url);
+	        };
+
+	        const isPrefetchVisitEvent = (event: unknown): boolean => {
+	            if (typeof event !== 'object' || event === null) {
+	                return false;
+	            }
+
+	            const detail =
+	                'detail' in event && typeof event.detail === 'object'
+	                    ? (event.detail as Record<string, unknown>)
+	                    : null;
+
+	            if (!detail) {
+	                return false;
+	            }
+
+	            const visit =
+	                'visit' in detail && typeof detail.visit === 'object'
+	                    ? (detail.visit as Record<string, unknown>)
+	                    : null;
+
+	            if (!visit) {
+	                return false;
+	            }
+
+	            if ('prefetch' in visit && visit.prefetch === true) {
+	                return true;
+	            }
+
+	            const rawHeaders =
+	                'headers' in visit && typeof visit.headers === 'object'
+	                    ? (visit.headers as Record<string, unknown>)
+	                    : null;
+
+	            if (!rawHeaders) {
+	                return false;
+	            }
+
+	            if ('get' in rawHeaders && typeof rawHeaders.get === 'function') {
+	                const purpose =
+	                    (rawHeaders.get('Purpose') ??
+	                        rawHeaders.get('purpose')) as unknown;
+
+	                return purpose === 'prefetch';
+	            }
+
+	            const purpose =
+	                (rawHeaders.Purpose ?? rawHeaders.purpose) as unknown;
+
+	            return purpose === 'prefetch';
+	        };
+
+	        const removePrefetchingListener = router.on('prefetching', (event) => {
+	            const url = urlFromEvent(event);
+
+	            if (!url) {
+	                return;
+	            }
+
+	            prefetchingUrlsRef.current.add(url);
+
+                if (
+                    pendingRefreshUrlRef.current === url &&
+                    refreshShowTimeoutRef.current
+                ) {
+                    window.clearTimeout(refreshShowTimeoutRef.current);
+                    refreshShowTimeoutRef.current = null;
+                }
+
+                if (pendingRefreshUrlRef.current === url && isRefreshingRef.current) {
+                    if (refreshHideTimeoutRef.current) {
+                        window.clearTimeout(refreshHideTimeoutRef.current);
+                        refreshHideTimeoutRef.current = null;
+                    }
+
+                    refreshStartedAtRef.current = null;
+                    pendingRefreshUrlRef.current = null;
+                    isRefreshingRef.current = false;
+                    setIsRefreshing(false);
+                }
+
+	            window.setTimeout(() => {
+	                prefetchingUrlsRef.current.delete(url);
+	            }, 5000);
+	        });
+
+	        const removePrefetchedListener = router.on('prefetched', (event) => {
+	            const url = urlFromEvent(event);
+
+	            if (!url) {
+	                return;
+	            }
+
+	            prefetchingUrlsRef.current.delete(url);
+	        });
+
+	        const removeStartListener = router.on('start', (event) => {
+	            if (isPrefetchVisitEvent(event)) {
+	                return;
+	            }
+
+	            const url = urlFromEvent(event);
+
+	            if (!url) {
+	                return;
+	            }
+
+	            if (url && prefetchingUrlsRef.current.has(url)) {
+	                return;
+	            }
+
             if (refreshShowTimeoutRef.current) {
                 window.clearTimeout(refreshShowTimeoutRef.current);
                 refreshShowTimeoutRef.current = null;
@@ -284,11 +453,28 @@ export default function Dashboard({
                 refreshHideTimeoutRef.current = null;
             }
 
-            refreshStartedAtRef.current = Date.now();
-            setIsRefreshing(true);
+            pendingRefreshUrlRef.current = url;
+
+            refreshShowTimeoutRef.current = window.setTimeout(() => {
+                refreshShowTimeoutRef.current = null;
+                refreshStartedAtRef.current = Date.now();
+                isRefreshingRef.current = true;
+                setIsRefreshing(true);
+            }, 150);
         });
 
         const removeFinishListener = router.on('finish', () => {
+            if (refreshShowTimeoutRef.current && refreshStartedAtRef.current === null) {
+                window.clearTimeout(refreshShowTimeoutRef.current);
+                refreshShowTimeoutRef.current = null;
+                pendingRefreshUrlRef.current = null;
+                return;
+            }
+
+            if (refreshStartedAtRef.current === null) {
+                return;
+            }
+
             if (refreshShowTimeoutRef.current) {
                 window.clearTimeout(refreshShowTimeoutRef.current);
                 refreshShowTimeoutRef.current = null;
@@ -300,21 +486,26 @@ export default function Dashboard({
             const remaining = Math.max(0, minVisibleMs - elapsed);
 
             refreshStartedAtRef.current = null;
+            pendingRefreshUrlRef.current = null;
 
             if (remaining === 0) {
+                isRefreshingRef.current = false;
                 setIsRefreshing(false);
                 return;
             }
 
             refreshHideTimeoutRef.current = window.setTimeout(() => {
                 refreshHideTimeoutRef.current = null;
+                isRefreshingRef.current = false;
                 setIsRefreshing(false);
             }, remaining);
         });
 
-        return () => {
-            removeStartListener();
-            removeFinishListener();
+	        return () => {
+	            removePrefetchingListener();
+	            removePrefetchedListener();
+	            removeStartListener();
+	            removeFinishListener();
 
             if (refreshShowTimeoutRef.current) {
                 window.clearTimeout(refreshShowTimeoutRef.current);
@@ -326,9 +517,11 @@ export default function Dashboard({
                 refreshHideTimeoutRef.current = null;
             }
 
-            refreshStartedAtRef.current = null;
-        };
-    }, []);
+	            refreshStartedAtRef.current = null;
+                pendingRefreshUrlRef.current = null;
+                isRefreshingRef.current = false;
+	        };
+	    }, []);
 
     const initialDateRange = useMemo<DateRange | undefined>(() => {
         const fromString = placementFilters.from || dateRangeBounds.from;
@@ -791,11 +984,11 @@ export default function Dashboard({
                                     Snapshot for the selected date range
                                 </CardDescription>
                             </CardHeader>
-                            <CardContent className="grid grid-cols-2 gap-3">
-                                <div className="rounded-lg border border-border/40 bg-muted/20 p-4">
-                                    <div className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
-                                        Total Students
-                                    </div>
+	                            <CardContent className="grid grid-cols-2 gap-3">
+	                                <div className="min-w-0 rounded-lg border border-border/40 bg-muted/20 p-4">
+	                                    <div className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+	                                        Total Students
+	                                    </div>
                                     <div className="mt-2 text-3xl font-bold tracking-tight text-foreground">
                                         {isLoading ? (
                                             <Skeleton className="h-9 w-20" />
@@ -805,10 +998,10 @@ export default function Dashboard({
                                     </div>
                                 </div>
 
-                                <div className="rounded-lg border border-border/40 bg-muted/20 p-4">
-                                    <div className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
-                                        Feeder Schools
-                                    </div>
+	                                <div className="min-w-0 rounded-lg border border-border/40 bg-muted/20 p-4">
+	                                    <div className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+	                                        Feeder Schools
+	                                    </div>
                                     <div className="mt-2 text-3xl font-bold tracking-tight text-foreground">
                                         {isLoading ? (
                                             <Skeleton className="h-9 w-16" />
@@ -818,10 +1011,10 @@ export default function Dashboard({
                                     </div>
                                 </div>
 
-                                <div className="rounded-lg border border-border/40 bg-muted/20 p-4">
-                                    <div className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
-                                        Placement Schools
-                                    </div>
+	                                <div className="min-w-0 rounded-lg border border-border/40 bg-muted/20 p-4">
+	                                    <div className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+	                                        Placement Schools
+	                                    </div>
                                     <div className="mt-2 text-3xl font-bold tracking-tight text-foreground">
                                         {isLoading ? (
                                             <Skeleton className="h-9 w-16" />
@@ -831,22 +1024,22 @@ export default function Dashboard({
                                     </div>
                                 </div>
 
-                                <div className="rounded-lg border border-border/40 bg-muted/20 p-4">
-                                    <div className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
-                                        Gender Distribution
-                                    </div>
-                                    <div className="mt-3 grid grid-cols-2 gap-3">
-                                        <div className="min-w-0 rounded-md border border-border/40 bg-background/20 p-3">
-                                            <div className="flex flex-col gap-1">
-                                                <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                                                    <div className="h-2 w-2 rounded-full bg-chart-1" />
-                                                    <span>Male</span>
-                                                </div>
-                                                <div className="text-2xl font-bold tabular-nums tracking-tight text-foreground">
-                                                    {isLoading ? (
-                                                        <Skeleton className="h-7 w-14" />
-                                                    ) : (
-                                                        <>
+	                                <div className="min-w-0 overflow-hidden rounded-lg border border-border/40 bg-muted/20 p-4">
+	                                    <div className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+	                                        Gender Distribution
+	                                    </div>
+	                                    <div className="mt-3 grid w-full min-w-0 grid-cols-1 gap-2 min-[420px]:grid-cols-2 min-[420px]:gap-3">
+	                                        <div className="min-w-0 rounded-md border border-border/40 bg-background/20 p-3">
+	                                            <div className="flex flex-col gap-1">
+	                                                <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+	                                                    <div className="h-2 w-2 rounded-full bg-chart-1" />
+	                                                    <span>Male</span>
+	                                                </div>
+	                                                <div className="text-xl font-bold tabular-nums tracking-tight text-foreground sm:text-2xl">
+	                                                    {isLoading ? (
+	                                                        <Skeleton className="h-7 w-14" />
+	                                                    ) : (
+	                                                        <>
                                                             {malePercent.toFixed(
                                                                 0,
                                                             )}
@@ -857,17 +1050,17 @@ export default function Dashboard({
                                             </div>
                                         </div>
 
-                                        <div className="min-w-0 rounded-md border border-border/40 bg-background/20 p-3">
-                                            <div className="flex flex-col gap-1">
-                                                <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                                                    <div className="h-2 w-2 rounded-full bg-chart-2" />
-                                                    <span>Female</span>
-                                                </div>
-                                                <div className="text-2xl font-bold tabular-nums tracking-tight text-foreground">
-                                                    {isLoading ? (
-                                                        <Skeleton className="h-7 w-14" />
-                                                    ) : (
-                                                        <>
+	                                        <div className="min-w-0 rounded-md border border-border/40 bg-background/20 p-3">
+	                                            <div className="flex flex-col gap-1">
+	                                                <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+	                                                    <div className="h-2 w-2 rounded-full bg-chart-2" />
+	                                                    <span>Female</span>
+	                                                </div>
+	                                                <div className="text-xl font-bold tabular-nums tracking-tight text-foreground sm:text-2xl">
+	                                                    {isLoading ? (
+	                                                        <Skeleton className="h-7 w-14" />
+	                                                    ) : (
+	                                                        <>
                                                             {femalePercent.toFixed(
                                                                 0,
                                                             )}
