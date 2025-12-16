@@ -17,13 +17,13 @@ test('placements can be filtered by academic year', function () {
         'academic_year' => 2026,
     ]);
 
-    $this->get(route('placements.index', ['academic_year' => 2026]))
+    $this->get(route('dashboard', ['academic_year' => 2026]))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
-            ->component('placements/index')
+            ->component('dashboard')
             ->has('placements.data', 1)
             ->where('placements.data.0.student_name', 'Student 2026')
-            ->where('filters.academic_year', '2026')
+            ->where('placementFilters.academic_year', '2026')
         );
 });
 
@@ -34,13 +34,13 @@ test('placements index includes available academic years', function () {
     StudentPlacement::factory()->create(['academic_year' => 2025]);
     StudentPlacement::factory()->create(['academic_year' => 2026]);
 
-    $this->get(route('placements.index'))
+    $this->get(route('dashboard'))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
-            ->component('placements/index')
-            ->has('academic_years', 3)
-            ->where('academic_years.0', 2026) // Ordered desc
-            ->where('academic_years.1', 2025)
-            ->where('academic_years.2', 2024)
+            ->component('dashboard')
+            ->has('academicYears', 3)
+            ->where('academicYears.0', 2026) // Ordered desc
+            ->where('academicYears.1', 2025)
+            ->where('academicYears.2', 2024)
         );
 });
