@@ -423,15 +423,14 @@ export default function Welcome({ canRegister = true, stats }: Props) {
                                                         </div>
                                                         <Badge
                                                             variant="outline"
-                                                            className={`rounded-md border-0 bg-secondary/50 px-2 py-0.5 text-[10px] font-semibold tracking-wider uppercase ${
-                                                                student.gender ===
+                                                            className={`rounded-md border-0 bg-secondary/50 px-2 py-0.5 text-[10px] font-semibold tracking-wider uppercase ${student.gender ===
                                                                 'M'
-                                                                    ? 'text-blue-600 dark:text-blue-300'
-                                                                    : 'text-rose-600 dark:text-rose-300'
-                                                            }`}
+                                                                ? 'text-blue-600 dark:text-blue-300'
+                                                                : 'text-rose-600 dark:text-rose-300'
+                                                                }`}
                                                         >
                                                             {student.gender ===
-                                                            'M'
+                                                                'M'
                                                                 ? 'Male'
                                                                 : 'Female'}
                                                         </Badge>
@@ -548,18 +547,18 @@ export default function Welcome({ canRegister = true, stats }: Props) {
                                         {[
                                             {
                                                 question:
-                                                    'How do I search for my child?',
-                                                answer: "Enter your child's full name or student ID in the search box above. Results will appear as you type once you enter at least 2 characters.",
+                                                    'How do I search?',
+                                                answer: "Enter full name, student ID, feeder school name, or year 7 placement school name in the search box above. Results will appear as you type once you enter at least 2 characters.",
                                             },
                                             {
                                                 question:
                                                     'What is the Student ID format?',
-                                                answer: 'Student IDs start with the letter "S" followed by 9 digits (e.g., S000000001). This ID is unique to each student and can be found on school reports.',
+                                                answer: 'UNOFFICIAL: Student IDs start with the letter "S" followed by 9 digits (e.g., S000000001). This ID is unique and is only used for this system.',
                                             },
                                             {
                                                 question:
-                                                    "What if I can't find my child?",
-                                                answer: "Verify the spelling of the name and try different variations. If still not found, please contact your child's feeder school for assistance.",
+                                                    "What if I can't find my name?",
+                                                answer: "Verify the spelling of the name and try different variations. If still not found, please contact your feeder school for assistance.",
                                             },
                                             {
                                                 question:
@@ -590,29 +589,9 @@ export default function Welcome({ canRegister = true, stats }: Props) {
                 <footer className="mt-auto border-t border-border bg-background py-10">
                     <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 px-6 sm:flex-row">
                         <p className="text-sm font-medium text-muted-foreground">
-                            &copy; {new Date().getFullYear()} Year 7 Student
-                            Placement System
+                            &copy; {new Date().getFullYear()}{' '}
+                            <a href="https://github.com/anikwai/placement.git">Placement System</a>
                         </p>
-                        <div className="flex items-center gap-8">
-                            <a
-                                href="#"
-                                className="text-sm font-bold text-muted-foreground transition-colors hover:text-foreground"
-                            >
-                                Privacy Policy
-                            </a>
-                            <a
-                                href="#"
-                                className="text-sm font-bold text-muted-foreground transition-colors hover:text-foreground"
-                            >
-                                Terms of Service
-                            </a>
-                            <a
-                                href="#"
-                                className="text-sm font-bold text-muted-foreground transition-colors hover:text-foreground"
-                            >
-                                Help Centre
-                            </a>
-                        </div>
                     </div>
                 </footer>
             </div>
