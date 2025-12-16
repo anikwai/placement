@@ -19,6 +19,33 @@ class DashboardController extends Controller
         $to = $this->parseDate((string) $request->input('to', ''));
         $academicYearValue = $academicYear !== '' ? (int) $academicYear : null;
 
+        $statsCache = null;
+        $resolveStats = function () use (&$statsCache, $academicYearValue, $from, $to) {
+            if (! is_null($statsCache)) {
+                return $statsCache;
+            }
+
+            $filteredBaseQuery = StudentPlacement::query();
+
+            if (! is_null($academicYearValue)) {
+                $filteredBaseQuery->where('academic_year', $academicYearValue);
+            }
+
+            $this->applyDateRangeFilter($filteredBaseQuery, $from, $to);
+
+            $statsCache = (clone $filteredBaseQuery)
+                ->selectRaw('
+                    COUNT(*) as total_students,
+                    COUNT(DISTINCT feeder_school_name) as feeder_schools,
+                    COUNT(DISTINCT year_7_placement_school_name) as placement_schools,
+                    SUM(CASE WHEN gender = \'M\' THEN 1 ELSE 0 END) as male_count,
+                    SUM(CASE WHEN gender = \'F\' THEN 1 ELSE 0 END) as female_count
+                ')
+                ->first();
+
+            return $statsCache;
+        };
+
         $boundsQuery = StudentPlacement::query();
 
         if (! is_null($academicYearValue)) {
@@ -33,58 +60,66 @@ class DashboardController extends Controller
         $maxCreatedAt = $dateBounds?->max_created_at ? CarbonImmutable::parse($dateBounds->max_created_at)->endOfDay() : null;
 
         if ($search !== '') {
-            $query = StudentPlacement::search($search);
+            $placementsQuery = function () use ($search, $perPage, $academicYearValue, $from, $to) {
+                $query = StudentPlacement::search($search);
 
-            if (! is_null($academicYearValue)) {
-                $query->where('academic_year', $academicYearValue);
-            }
+                if (! is_null($academicYearValue)) {
+                    $query->where('academic_year', $academicYearValue);
+                }
 
-            if ($this->hasDateRange($from, $to)) {
-                $query->where('created_at', $this->typesenseCreatedAtFilter($from, $to));
-            }
+                if ($this->hasDateRange($from, $to)) {
+                    $query->where('created_at', $this->typesenseCreatedAtFilter($from, $to));
+                }
+
+                return $query->paginate($perPage)->withQueryString();
+            };
         } else {
-            $query = StudentPlacement::query();
+            $placementsQuery = function () use ($perPage, $academicYearValue, $from, $to) {
+                $query = StudentPlacement::query();
+
+                if (! is_null($academicYearValue)) {
+                    $query->where('academic_year', $academicYearValue);
+                }
+
+                $this->applyDateRangeFilter($query, $from, $to);
+
+                return $query->paginate($perPage)->withQueryString();
+            };
+        }
+
+        $topFeederSchoolsQuery = function () use ($academicYearValue, $from, $to) {
+            $filteredBaseQuery = StudentPlacement::query();
 
             if (! is_null($academicYearValue)) {
-                $query->where('academic_year', $academicYearValue);
+                $filteredBaseQuery->where('academic_year', $academicYearValue);
             }
 
-            $this->applyDateRangeFilter($query, $from, $to);
-        }
+            $this->applyDateRangeFilter($filteredBaseQuery, $from, $to);
 
-        $placements = $query->paginate($perPage)->withQueryString();
+            return (clone $filteredBaseQuery)
+                ->selectRaw('feeder_school_name, COUNT(*) as student_count')
+                ->groupBy('feeder_school_name')
+                ->orderByDesc('student_count')
+                ->limit(5)
+                ->get();
+        };
 
-        $filteredBaseQuery = StudentPlacement::query();
+        $topPlacementSchoolsQuery = function () use ($academicYearValue, $from, $to) {
+            $filteredBaseQuery = StudentPlacement::query();
 
-        if (! is_null($academicYearValue)) {
-            $filteredBaseQuery->where('academic_year', $academicYearValue);
-        }
+            if (! is_null($academicYearValue)) {
+                $filteredBaseQuery->where('academic_year', $academicYearValue);
+            }
 
-        $this->applyDateRangeFilter($filteredBaseQuery, $from, $to);
+            $this->applyDateRangeFilter($filteredBaseQuery, $from, $to);
 
-        $stats = (clone $filteredBaseQuery)
-            ->selectRaw('
-                COUNT(*) as total_students,
-                COUNT(DISTINCT feeder_school_name) as feeder_schools,
-                COUNT(DISTINCT year_7_placement_school_name) as placement_schools,
-                SUM(CASE WHEN gender = \'M\' THEN 1 ELSE 0 END) as male_count,
-                SUM(CASE WHEN gender = \'F\' THEN 1 ELSE 0 END) as female_count
-            ')
-            ->first();
-
-        $topFeederSchools = (clone $filteredBaseQuery)
-            ->selectRaw('feeder_school_name, COUNT(*) as student_count')
-            ->groupBy('feeder_school_name')
-            ->orderByDesc('student_count')
-            ->limit(5)
-            ->get();
-
-        $topPlacementSchools = (clone $filteredBaseQuery)
-            ->selectRaw('year_7_placement_school_name, COUNT(*) as student_count')
-            ->groupBy('year_7_placement_school_name')
-            ->orderByDesc('student_count')
-            ->limit(5)
-            ->get();
+            return (clone $filteredBaseQuery)
+                ->selectRaw('year_7_placement_school_name, COUNT(*) as student_count')
+                ->groupBy('year_7_placement_school_name')
+                ->orderByDesc('student_count')
+                ->limit(5)
+                ->get();
+        };
 
         $academicYears = StudentPlacement::query()
             ->distinct()
@@ -94,16 +129,20 @@ class DashboardController extends Controller
             ->values();
 
         return Inertia::render('dashboard', [
-            'stats' => [
-                'totalStudents' => (int) $stats->total_students,
-                'feederSchools' => (int) $stats->feeder_schools,
-                'placementSchools' => (int) $stats->placement_schools,
-                'maleCount' => (int) $stats->male_count,
-                'femaleCount' => (int) $stats->female_count,
-            ],
-            'topFeederSchools' => $topFeederSchools,
-            'topPlacementSchools' => $topPlacementSchools,
-            'placements' => $placements,
+            'stats' => Inertia::defer(function () use ($resolveStats) {
+                $stats = $resolveStats();
+
+                return [
+                    'totalStudents' => (int) $stats->total_students,
+                    'feederSchools' => (int) $stats->feeder_schools,
+                    'placementSchools' => (int) $stats->placement_schools,
+                    'maleCount' => (int) $stats->male_count,
+                    'femaleCount' => (int) $stats->female_count,
+                ];
+            }, 'dashboard'),
+            'topFeederSchools' => Inertia::defer($topFeederSchoolsQuery, 'dashboard'),
+            'topPlacementSchools' => Inertia::defer($topPlacementSchoolsQuery, 'dashboard'),
+            'placements' => Inertia::defer($placementsQuery, 'dashboard'),
             'placementFilters' => [
                 'search' => $search,
                 'per_page' => $perPage,
@@ -111,11 +150,15 @@ class DashboardController extends Controller
                 'from' => $from?->format('Y-m-d') ?? '',
                 'to' => $to?->format('Y-m-d') ?? '',
             ],
-            'placementStats' => [
-                'total_students' => (int) $stats->total_students,
-                'feeder_schools' => (int) $stats->feeder_schools,
-                'placement_schools' => (int) $stats->placement_schools,
-            ],
+            'placementStats' => Inertia::defer(function () use ($resolveStats) {
+                $stats = $resolveStats();
+
+                return [
+                    'total_students' => (int) $stats->total_students,
+                    'feeder_schools' => (int) $stats->feeder_schools,
+                    'placement_schools' => (int) $stats->placement_schools,
+                ];
+            }, 'dashboard'),
             'academicYears' => $academicYears,
             'dateRangeBounds' => [
                 'from' => $minCreatedAt?->format('Y-m-d') ?? null,
