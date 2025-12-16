@@ -578,7 +578,7 @@ export default function Dashboard({
                                 ) : topPlacementView === 'graph' ? (
                                     <ChartContainer
                                         config={chartConfig}
-                                        className="max-h-[350px] w-full"
+                                        className="h-[300px] w-full aspect-auto"
                                     >
                                         <BarChart
                                             accessibilityLayer
@@ -741,16 +741,22 @@ export default function Dashboard({
                             </CardContent>
                         </Card>
 
-                        {/* Stats Grid (1/3 width, 2x2 grid) */}
-                        <div className="grid grid-cols-2 content-start gap-4 lg:grid-cols-2">
-                            <Card className="border-border bg-card text-card-foreground shadow-sm">
-                                <CardHeader className="pb-2">
-                                    <CardTitle className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                        {/* Key Metrics (1/3 width) */}
+                        <Card className="border-border bg-card text-card-foreground shadow-sm">
+                            <CardHeader className="pb-3">
+                                <CardTitle className="text-sm font-semibold text-foreground">
+                                    Key Metrics
+                                </CardTitle>
+                                <CardDescription className="text-xs text-muted-foreground">
+                                    Snapshot for the selected date range
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="grid grid-cols-2 gap-3">
+                                <div className="rounded-lg border border-border/40 bg-muted/20 p-4">
+                                    <div className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                                         Total Students
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-3xl font-bold tracking-tight text-foreground">
+                                    </div>
+                                    <div className="mt-2 text-3xl font-bold tracking-tight text-foreground">
                                         {isLoading ? (
                                             <Skeleton className="h-9 w-20" />
                                         ) : (
@@ -765,17 +771,13 @@ export default function Dashboard({
                                             vs last year
                                         </span>
                                     </div>
-                                </CardContent>
-                            </Card>
+                                </div>
 
-                            <Card className="border-border bg-card text-card-foreground shadow-sm">
-                                <CardHeader className="pb-2">
-                                    <CardTitle className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                                <div className="rounded-lg border border-border/40 bg-muted/20 p-4">
+                                    <div className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                                         Feeder Schools
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-3xl font-bold tracking-tight text-foreground">
+                                    </div>
+                                    <div className="mt-2 text-3xl font-bold tracking-tight text-foreground">
                                         {isLoading ? (
                                             <Skeleton className="h-9 w-16" />
                                         ) : (
@@ -790,17 +792,13 @@ export default function Dashboard({
                                             vs last year
                                         </span>
                                     </div>
-                                </CardContent>
-                            </Card>
+                                </div>
 
-                            <Card className="border-border bg-card text-card-foreground shadow-sm">
-                                <CardHeader className="pb-2">
-                                    <CardTitle className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                                <div className="rounded-lg border border-border/40 bg-muted/20 p-4">
+                                    <div className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                                         Placement Schools
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-3xl font-bold tracking-tight text-foreground">
+                                    </div>
+                                    <div className="mt-2 text-3xl font-bold tracking-tight text-foreground">
                                         {isLoading ? (
                                             <Skeleton className="h-9 w-16" />
                                         ) : (
@@ -815,17 +813,13 @@ export default function Dashboard({
                                             vs last year
                                         </span>
                                     </div>
-                                </CardContent>
-                            </Card>
+                                </div>
 
-                            <Card className="border-border bg-card text-card-foreground shadow-sm">
-                                <CardHeader className="pb-2">
-                                    <CardTitle className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                                <div className="rounded-lg border border-border/40 bg-muted/20 p-4">
+                                    <div className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                                         Male %
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-3xl font-bold tracking-tight text-foreground">
+                                    </div>
+                                    <div className="mt-2 text-3xl font-bold tracking-tight text-foreground">
                                         {isLoading ? (
                                             <Skeleton className="h-9 w-16" />
                                         ) : (
@@ -840,9 +834,9 @@ export default function Dashboard({
                                             Distribution
                                         </span>
                                     </div>
-                                </CardContent>
-                            </Card>
-                        </div>
+                                </div>
+                            </CardContent>
+                        </Card>
                     </div>
 
                     {/* Bottom Row: Feeder List + Gender Donut */}
@@ -859,14 +853,6 @@ export default function Dashboard({
                                         students
                                     </CardDescription>
                                 </div>
-                                <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    className="h-8 w-8 text-muted-foreground hover:bg-accent hover:text-foreground"
-                                >
-                                    <span className="sr-only">View All</span>
-                                    <span>→</span>
-                                </Button>
                             </CardHeader>
                             <CardContent className="space-y-0 p-0">
                                 {/* Header Row for List */}
