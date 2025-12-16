@@ -30,10 +30,14 @@ test('dashboard can be filtered by created_at date range', function () {
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('dashboard')
-            ->where('stats.totalStudents', 1)
             ->where('placementFilters.from', '2025-12-01')
             ->where('placementFilters.to', '2025-12-31')
-            ->has('placements.data', 1)
-            ->where('placements.data.0.student_name', 'In range')
+            ->missing('stats')
+            ->missing('placements')
+            ->loadDeferredProps('dashboard', fn (Assert $reload) => $reload
+                ->where('stats.totalStudents', 1)
+                ->has('placements.data', 1)
+                ->where('placements.data.0.student_name', 'In range')
+            )
         );
 });
