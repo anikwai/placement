@@ -157,7 +157,7 @@ export default function StudentPlacementsTable({
 
     return (
         <Card className="overflow-hidden bg-card/70 backdrop-blur supports-[backdrop-filter]:bg-card/70">
-            <CardHeader>
+            <CardHeader className="gap-4 has-data-[slot=card-action]:grid-cols-1 sm:has-data-[slot=card-action]:grid-cols-[1fr_auto]">
                 <div>
                     <CardTitle>Placements</CardTitle>
                     <CardDescription>
@@ -172,8 +172,8 @@ export default function StudentPlacementsTable({
                         )}
                     </CardDescription>
                 </div>
-                <CardAction>
-                    <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
+                <CardAction className="col-start-1 row-start-3 row-span-1 w-full justify-self-stretch sm:col-start-2 sm:row-span-2 sm:row-start-1 sm:w-auto sm:justify-self-end">
+                    <div className="grid w-full gap-3 sm:flex sm:w-auto sm:items-center">
                         <div className="relative w-full sm:w-72">
                             <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                             <Input
@@ -195,92 +195,101 @@ export default function StudentPlacementsTable({
                                 </button>
                             )}
                         </div>
-                        <div className="flex items-center gap-2">
-                            <span className="text-sm text-muted-foreground">
-                                Rows
-                            </span>
-                            <Select
-                                value={String(filters.per_page)}
-                                onValueChange={handlePerPageChange}
-                            >
-                                <SelectTrigger className="w-24 bg-background/60">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="10">10</SelectItem>
-                                    <SelectItem value="25">25</SelectItem>
-                                    <SelectItem value="50">50</SelectItem>
-                                    <SelectItem value="100">100</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <span className="text-sm text-muted-foreground">
-                                Year
-                            </span>
-                            <Select
-                                value={academicYear || 'all'}
-                                onValueChange={handleAcademicYearChange}
-                            >
-                                <SelectTrigger className="w-32 bg-background/60">
-                                    <SelectValue placeholder="All Years" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">
-                                        All Years
-                                    </SelectItem>
-                                    {academicYears.map((year) => (
-                                        <SelectItem
-                                            key={year}
-                                            value={String(year)}
-                                        >
-                                            {year}
+                        <div className="grid grid-cols-2 gap-3 sm:flex sm:items-center sm:gap-3">
+                            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
+                                <span className="text-xs text-muted-foreground sm:text-sm">
+                                    Rows
+                                </span>
+                                <Select
+                                    value={String(filters.per_page)}
+                                    onValueChange={handlePerPageChange}
+                                >
+                                    <SelectTrigger className="w-full bg-background/60 sm:w-24">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="10">10</SelectItem>
+                                        <SelectItem value="25">25</SelectItem>
+                                        <SelectItem value="50">50</SelectItem>
+                                        <SelectItem value="100">100</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
+                                <span className="text-xs text-muted-foreground sm:text-sm">
+                                    Year
+                                </span>
+                                <Select
+                                    value={academicYear || 'all'}
+                                    onValueChange={handleAcademicYearChange}
+                                >
+                                    <SelectTrigger className="w-full bg-background/60 sm:w-32">
+                                        <SelectValue placeholder="All Years" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">
+                                            All Years
                                         </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                                        {academicYears.map((year) => (
+                                            <SelectItem
+                                                key={year}
+                                                value={String(year)}
+                                            >
+                                                {year}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
                     </div>
                 </CardAction>
             </CardHeader>
             <CardContent className="px-0">
-                <Table>
-                    <TableHeader className="bg-muted/30">
-                        <TableRow className="hover:bg-muted/30">
-                            <TableHead className="px-6">Student</TableHead>
-                            <TableHead className="px-6">Gender</TableHead>
-                            <TableHead className="px-6">
-                                Feeder School
-                            </TableHead>
-                            <TableHead className="px-6">
-                                Placement School
-                            </TableHead>
-                            <TableHead className="px-6">Year</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
+                <div className="w-full overflow-x-auto">
+                    <Table className="min-w-0 sm:min-w-[720px]">
+                        <TableHeader className="bg-muted/30">
+                            <TableRow className="hover:bg-muted/30">
+                                <TableHead className="px-4 sm:px-6">
+                                    Student
+                                </TableHead>
+                                <TableHead className="hidden px-4 sm:table-cell sm:px-6">
+                                    Gender
+                                </TableHead>
+                                <TableHead className="hidden px-4 sm:table-cell sm:px-6">
+                                    Feeder School
+                                </TableHead>
+                                <TableHead className="px-4 sm:px-6">
+                                    Placement School
+                                </TableHead>
+                                <TableHead className="hidden px-4 sm:table-cell sm:px-6">
+                                    Year
+                                </TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
                         {isLoading ? (
                             Array.from({ length: 8 }).map((_, index) => (
                                 <TableRow
                                     key={index}
                                     className="odd:bg-muted/15"
                                 >
-                                    <TableCell className="px-6">
+                                    <TableCell className="px-4 sm:px-6">
                                         <div className="flex flex-col gap-2">
                                             <Skeleton className="h-4 w-40" />
                                             <Skeleton className="h-3 w-24" />
                                         </div>
                                     </TableCell>
-                                    <TableCell className="px-6">
+                                    <TableCell className="hidden px-4 sm:table-cell sm:px-6">
                                         <Skeleton className="h-6 w-16" />
                                     </TableCell>
-                                    <TableCell className="px-6">
+                                    <TableCell className="hidden px-4 sm:table-cell sm:px-6">
                                         <Skeleton className="h-4 w-40" />
                                     </TableCell>
-                                    <TableCell className="px-6">
+                                    <TableCell className="px-4 sm:px-6">
                                         <Skeleton className="h-4 w-40" />
                                     </TableCell>
-                                    <TableCell className="px-6">
+                                    <TableCell className="hidden px-4 sm:table-cell sm:px-6">
                                         <Skeleton className="h-4 w-12" />
                                     </TableCell>
                                 </TableRow>
@@ -316,9 +325,9 @@ export default function StudentPlacementsTable({
                                     key={placement.id}
                                     className="odd:bg-muted/15"
                                 >
-                                    <TableCell className="px-6 whitespace-normal">
+                                    <TableCell className="px-4 sm:px-6">
                                         <div className="flex flex-col gap-1">
-                                            <div className="font-medium">
+                                            <div className="font-medium leading-tight">
                                                 {placement.student_name}
                                             </div>
                                             <div className="text-xs text-muted-foreground">
@@ -328,9 +337,23 @@ export default function StudentPlacementsTable({
                                                     }
                                                 </code>
                                             </div>
+                                            <div className="sm:hidden">
+                                                <Badge
+                                                    variant={
+                                                        placement.gender === 'M'
+                                                            ? 'default'
+                                                            : 'secondary'
+                                                    }
+                                                    className="mt-1"
+                                                >
+                                                    {placement.gender === 'M'
+                                                        ? 'Male'
+                                                        : 'Female'}
+                                                </Badge>
+                                            </div>
                                         </div>
                                     </TableCell>
-                                    <TableCell className="px-6">
+                                    <TableCell className="hidden px-4 sm:table-cell sm:px-6">
                                         <Badge
                                             variant={
                                                 placement.gender === 'M'
@@ -343,20 +366,29 @@ export default function StudentPlacementsTable({
                                                 : 'Female'}
                                         </Badge>
                                     </TableCell>
-                                    <TableCell className="px-6 text-sm whitespace-normal text-muted-foreground">
+                                    <TableCell className="hidden px-4 text-sm whitespace-normal text-muted-foreground sm:table-cell sm:px-6">
                                         {placement.feeder_school_name}
                                     </TableCell>
-                                    <TableCell className="px-6 text-sm whitespace-normal">
-                                        {placement.year_7_placement_school_name}
+                                    <TableCell className="px-4 text-sm whitespace-normal sm:px-6">
+                                        <div className="font-medium leading-tight">
+                                            {placement.year_7_placement_school_name}
+                                        </div>
+                                        <div className="mt-1 text-xs text-muted-foreground sm:hidden">
+                                            {placement.feeder_school_name}
+                                        </div>
+                                        <div className="mt-1 text-xs text-muted-foreground sm:hidden">
+                                            Year {placement.academic_year || '—'}
+                                        </div>
                                     </TableCell>
-                                    <TableCell className="px-6 text-sm whitespace-nowrap text-muted-foreground">
+                                    <TableCell className="hidden px-4 text-sm whitespace-nowrap text-muted-foreground sm:table-cell sm:px-6">
                                         {placement.academic_year || '—'}
                                     </TableCell>
                                 </TableRow>
                             ))
                         )}
-                    </TableBody>
-                </Table>
+                        </TableBody>
+                    </Table>
+                </div>
             </CardContent>
 
             {placements.last_page > 1 && (

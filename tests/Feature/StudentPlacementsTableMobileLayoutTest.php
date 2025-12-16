@@ -1,0 +1,11 @@
+<?php
+
+test('student placements table stacks filters and hides extra columns on mobile', function () {
+    $table = file_get_contents(base_path('resources/js/components/student-placements-table.tsx'));
+
+    expect($table)->toContain('has-data-[slot=card-action]:grid-cols-1');
+    expect($table)->toContain('col-start-1 row-start-3');
+    expect($table)->toContain('overflow-x-auto');
+    expect($table)->toContain('sm:table-cell');
+    expect($table)->toContain('sm:hidden');
+});

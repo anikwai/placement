@@ -233,17 +233,20 @@ export default function Welcome({ canRegister = true, stats }: Props) {
 
                 {/* Header */}
                 <header className="fixed top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-sm">
-                    <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
-                        <Link href={home()} className="flex items-center gap-3">
+                    <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
+                        <Link
+                            href={home()}
+                            className="flex min-w-0 items-center gap-2 sm:gap-3"
+                        >
                             <div className="flex h-9 w-9 items-center justify-center rounded-md border border-border bg-muted text-foreground">
                                 <AppLogoIcon className="size-5 fill-current text-foreground" />
                             </div>
-                            <span className="text-sm font-bold tracking-tight">
+                            <span className="max-w-[10rem] truncate text-sm font-bold tracking-tight sm:max-w-none">
                                 {logoText}
                             </span>
                         </Link>
 
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2 sm:gap-4">
                             <Button
                                 variant="ghost"
                                 size="icon"
@@ -258,27 +261,27 @@ export default function Welcome({ canRegister = true, stats }: Props) {
                                 )}
                             </Button>
 
-                            <div className="h-4 w-px bg-border" />
+                            <div className="hidden h-4 w-px bg-border sm:block" />
 
                             {auth.user ? (
                                 <Link
                                     href={dashboard()}
-                                    className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                                    className="whitespace-nowrap text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
                                 >
                                     Dashboard
                                 </Link>
                             ) : (
-                                <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-2 sm:gap-4">
                                     <Link
                                         href={login()}
-                                        className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                                        className="whitespace-nowrap text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
                                     >
                                         Log in
                                     </Link>
                                     {canRegister && (
                                         <Button
                                             asChild
-                                            className="bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
+                                            className="whitespace-nowrap bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
                                         >
                                             <Link href={register()}>
                                                 Register
@@ -291,17 +294,17 @@ export default function Welcome({ canRegister = true, stats }: Props) {
                     </div>
                 </header>
 
-                <main className="relative z-10 flex-1 pt-32 pb-20">
+                <main className="relative z-10 flex-1 pt-28 pb-20 sm:pt-32">
                     <motion.div
                         initial="initial"
                         animate="animate"
                         variants={staggerContainer}
-                        className="mx-auto max-w-3xl px-6 text-center"
+                        className="mx-auto max-w-3xl px-4 text-center sm:px-6"
                     >
                         {/* Hero Badge - Solid & Crisp */}
 
                         <motion.div variants={fadeInUp}>
-                            <h1 className="mb-6 text-5xl font-bold tracking-tight text-foreground sm:text-6xl">
+                            <h1 className="mb-6 text-4xl font-bold tracking-tight text-foreground sm:text-6xl">
                                 Find student placements <br />
                                 <span className="text-primary dark:text-blue-400">
                                     instantly.
@@ -322,11 +325,11 @@ export default function Welcome({ canRegister = true, stats }: Props) {
                             variants={fadeInUp}
                             className="group relative mx-auto mb-12 max-w-xl"
                         >
-                            <Search className="pointer-events-none absolute top-1/2 left-5 z-10 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+                            <Search className="pointer-events-none absolute top-1/2 left-4 z-10 h-5 w-5 -translate-y-1/2 text-muted-foreground sm:left-5" />
                             <Input
                                 ref={searchInputRef}
                                 type="text"
-                                className="h-auto w-full rounded-lg border-border bg-background py-6 pr-14 pl-14 text-lg shadow-sm transition-shadow duration-300 placeholder:text-muted-foreground hover:shadow-md focus-visible:ring-primary dark:border-primary/30 dark:bg-muted/30"
+                                className="h-auto w-full rounded-lg border-border bg-background py-5 pr-12 pl-12 text-base shadow-sm transition-shadow duration-300 placeholder:text-muted-foreground hover:shadow-md focus-visible:ring-primary sm:pr-14 sm:pl-14 sm:text-lg dark:border-primary/30 dark:bg-muted/30"
                                 placeholder="Search by name or ID..."
                                 value={search}
                                 onChange={(e) =>
@@ -338,7 +341,7 @@ export default function Welcome({ canRegister = true, stats }: Props) {
                                     variant="ghost"
                                     size="icon"
                                     onClick={clearSearch}
-                                    className="absolute top-1/2 right-2 h-8 w-8 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                                    className="absolute top-1/2 right-1.5 h-8 w-8 -translate-y-1/2 text-muted-foreground hover:text-foreground sm:right-2"
                                 >
                                     <X className="h-4 w-4" />
                                 </Button>
@@ -356,7 +359,7 @@ export default function Welcome({ canRegister = true, stats }: Props) {
                         )}
                     </motion.div>
 
-                    <div className="mx-auto mt-16 max-w-6xl px-6">
+                    <div className="mx-auto mt-16 max-w-6xl px-4 sm:px-6">
                         {/* Loading State */}
                         {isLoading && (
                             <div className="grid gap-4">

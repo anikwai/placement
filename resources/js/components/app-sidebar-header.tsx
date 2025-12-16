@@ -27,13 +27,15 @@ export function AppSidebarHeader({
     const getInitials = useInitials();
 
     return (
-        <header className="flex h-16 shrink-0 items-center justify-between gap-2 border-b border-sidebar-border/50 px-6 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 md:px-4">
+        <header className="flex h-16 shrink-0 items-center justify-between gap-2 border-b border-sidebar-border/50 px-4 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 sm:px-6 md:px-4">
             <div className="flex items-center gap-2">
                 <SidebarTrigger className="-ml-1" />
-                <Breadcrumbs breadcrumbs={breadcrumbs} />
+                <div className="hidden sm:block">
+                    <Breadcrumbs breadcrumbs={breadcrumbs} />
+                </div>
             </div>
 
-            <div className="flex flex-1 items-center justify-center px-4">
+            <div className="hidden flex-1 items-center justify-center px-4 md:flex">
                 <PlacementSearchDialog
                     trigger={
                         <button
@@ -55,6 +57,21 @@ export function AppSidebarHeader({
             </div>
 
             <div className="flex items-center gap-2">
+                <div className="md:hidden">
+                    <PlacementSearchDialog
+                        trigger={
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                                aria-label="Search placements"
+                            >
+                                <Search className="h-4 w-4" />
+                            </Button>
+                        }
+                    />
+                </div>
+
                 <Button
                     variant="ghost"
                     size="icon"
