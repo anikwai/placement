@@ -7,6 +7,7 @@ test('dashboard uses skeletons during data refresh', function () {
     expect($dashboard)->toContain('isRefreshing');
     expect($dashboard)->toContain('isDeferredLoading');
     expect($dashboard)->toContain('const isLoading = isRefreshing || isDeferredLoading');
+    expect($dashboard)->toContain("router.on('prefetching'");
     expect($dashboard)->toContain("router.on('start'");
     expect($dashboard)->toContain('<Skeleton');
     expect($dashboard)->toContain('isLoading={isLoading}');
