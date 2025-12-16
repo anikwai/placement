@@ -8,4 +8,11 @@ test('student placements table stacks filters and hides extra columns on mobile'
     expect($table)->toContain('overflow-x-auto');
     expect($table)->toContain('sm:table-cell');
     expect($table)->toContain('sm:hidden');
+    expect($table)->toContain('useIsMobile');
+    expect($table)->toContain('paginationLinks');
+    expect($table)->toContain("only={['placements']}");
+    expect($table)->toContain('prefetch={paginationPrefetch}');
+    expect($table)->toContain('replace');
+    expect($table)->toContain('Previous page');
+    expect($table)->toContain('Next page');
 });
