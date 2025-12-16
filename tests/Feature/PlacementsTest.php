@@ -35,9 +35,12 @@ test('placements can be searched', function () {
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('dashboard')
-            ->has('placements.data', 1)
-            ->where('placements.data.0.student_name', 'John Doe')
             ->where('placementFilters.search', 'John')
+            ->missing('placements')
+            ->loadDeferredProps('dashboard', fn (Assert $reload) => $reload
+                ->has('placements.data', 1)
+                ->where('placements.data.0.student_name', 'John Doe')
+            )
         );
 });
 
